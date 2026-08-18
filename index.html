@@ -1,234 +1,346 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TERMINAL // NODE_8912_SDR</title>
+    <title>TERMINAL // FORGOTTEN SDR-NODE</title>
     <style>
         :root {
-            --term-green: #00ff66;
-            --term-dim: rgba(0, 255, 102, 0.4);
-            --bg-color: #050805;
+            --green-glow: #00ff66;
+            --amber-glow: #ffaa00;
         }
 
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
+            user-select: none;
         }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--term-green);
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
             font-family: 'Courier New', Courier, monospace;
-            padding: 20px;
-            min-height: 100vh;
+        }
+
+        /* 1. 全屏沉浸式废弃电台背景图 */
+        .viewport {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            /* 高精拟真废弃防空洞/无线电台背景 */
+            background: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat;
             display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-            text-shadow: 0 0 5px var(--term-dim);
+            justify-content: center;
+            align-items: center;
+            filter: contrast(1.1) brightness(0.8);
         }
 
-        /* 模拟 CRT 显示屏扫描线与暗角 */
-        body::before {
-            content: " ";
-            display: block;
-            position: fixed;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), 
-                        radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.8) 100%);
-            background-size: 100% 4px, 100% 100%;
-            z-index: 100;
+        /* 暗角与废弃防空洞环境滤镜 */
+        .ambient-vignette {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.92) 100%);
             pointer-events: none;
+            z-index: 1;
         }
 
-        .system-header {
-            border-bottom: 1px dashed var(--term-green);
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-            font-size: 12px;
-            opacity: 0.8;
-            line-height: 1.4;
+        /* 呼吸照明效果：模拟屏幕微光照亮废弃房间 */
+        .screen-glow-environment {
+            position: absolute;
+            width: 600px;
+            height: 400px;
+            background: rgba(0, 255, 102, 0.08);
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 2;
+            animation: pulse-glow 4s infinite alternate ease-in-out;
         }
 
-        /* 终端历史输出区域 */
-        #console-output {
-            flex: 1;
+        @keyframes pulse-glow {
+            0% { opacity: 0.4; }
+            100% { opacity: 0.8; }
+        }
+
+        /* 2. 嵌入在设备上的 CRT 显示屏 */
+        .crt-hardware-frame {
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            max-width: 640px;
+            background: rgba(5, 12, 7, 0.88);
+            border: 2px solid rgba(0, 255, 102, 0.25);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.95),
+                        inset 0 0 15px rgba(0, 255, 102, 0.1);
+            backdrop-filter: blur(4px);
+        }
+
+        /* CRT 动态扫描线与灰尘玻璃质感 */
+        .crt-hardware-frame::after {
+            content: " ";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
+                        linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+            border-radius: 10px;
+        }
+
+        /* 状态顶栏 */
+        .screen-header {
+            display: flex;
+            justify-content: space-between;
+            color: var(--green-glow);
+            font-size: 11px;
+            border-bottom: 1px solid rgba(0, 255, 102, 0.2);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 4px var(--green-glow);
+        }
+
+        /* Canvas 动态瀑布图/波形屏 */
+        #waterfallCanvas {
+            width: 100%;
+            height: 90px;
+            background: #020603;
+            border: 1px solid rgba(0, 255, 102, 0.15);
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        /* 终端日志打印区 */
+        .terminal-log {
+            height: 110px;
             overflow-y: auto;
-            font-size: 13px;
-            line-height: 1.6;
+            color: var(--green-glow);
+            font-size: 12px;
+            line-height: 1.5;
             word-break: break-all;
-            margin-bottom: 15px;
-            white-space: pre-wrap;
+            margin-bottom: 10px;
+            text-shadow: 0 0 4px rgba(0, 255, 102, 0.4);
+            user-select: text;
         }
 
-        /* 命令行输入区 */
-        .cmd-line {
+        /* 命令行输入框 */
+        .command-bar {
             display: flex;
             align-items: center;
-            font-size: 14px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 255, 102, 0.3);
+            padding: 8px 10px;
+            border-radius: 4px;
         }
 
         .prompt {
-            margin-right: 10px;
-            white-space: nowrap;
+            color: var(--green-glow);
+            margin-right: 8px;
+            font-size: 13px;
         }
 
-        #cmd-input {
+        .cmd-input {
             background: transparent;
             border: none;
-            color: var(--term-green);
-            font-family: inherit;
-            font-size: 14px;
             outline: none;
-            flex: 1;
-            text-shadow: 0 0 5px var(--term-dim);
-            caret-color: var(--term-green);
-        }
-
-        .highlight {
             color: #fff;
-            font-weight: bold;
-            text-shadow: 0 0 8px #fff;
-        }
-
-        .error {
-            color: #ff3333;
-            text-shadow: 0 0 5px rgba(255, 51, 51, 0.5);
+            font-family: inherit;
+            font-size: 13px;
+            flex: 1;
+            text-shadow: 0 0 6px var(--green-glow);
+            user-select: text;
         }
 
         @media (max-width: 480px) {
-            body { padding: 10px; }
-            #console-output, #cmd-input, .cmd-line { font-size: 12px; }
+            .crt-hardware-frame { padding: 14px; width: 95%; }
+            .terminal-log { height: 90px; font-size: 11px; }
+            #waterfallCanvas { height: 70px; }
         }
     </style>
 </head>
 <body>
 
-<div class="system-header">
-    OS MEMORY: 640K OK // SDR DAEMON v4.19.0-sys-rc2<br>
-    UNAUTHORIZED ACCESS TO THIS NODE IS A FEDERAL OFFENSE.<br>
-    SYSTEM STATUS: DEGRADED // SIGNAL ACQUISITION LOCK OUT
-</div>
+<div class="viewport">
+    <div class="ambient-vignette"></div>
+    <div class="screen-glow-environment"></div>
 
-<!-- 终端历史日志 -->
-<div id="console-output">
-[SYSTEM INIT 1999-10-14] Mounting /dev/sdr0... OK.<br>
-[SYSTEM WARN] Frequency receiver unbound. Local audio subsystem dormant.<br>
-[SYSTEM HINT] Type 'help' to display available system diagnostics.
-</div>
+    <!-- 硬件显示屏主体 -->
+    <div class="crt-hardware-frame">
+        <div class="screen-header">
+            <span>FORGOTTEN_NODE // RX-4625</span>
+            <span id="statusIndicator">SYSTEM DORMANT</span>
+        </div>
 
-<!-- 命令行交互 -->
-<div class="cmd-line">
-    <span class="prompt">usr@node-8912:~$</span>
-    <input type="text" id="cmd-input" autofocus autocomplete="off" spellcheck="false">
+        <!-- 频谱瀑布波形图 -->
+        <canvas id="waterfallCanvas"></canvas>
+
+        <!-- 终端控制台日志 -->
+        <div class="terminal-log" id="logBox">
+[SYS_BOOT] Substation receiver power restored.<br>
+[SYS_WARN] Main antenna misaligned. High static ratio.<br>
+[SYS_HINT] Type 'help' to access console commands.<br>
+--------------------------------------------------
+        </div>
+
+        <!-- 指令输入行 -->
+        <div class="command-bar">
+            <span class="prompt">&gt;</span>
+            <input type="text" class="cmd-input" id="cmdInput" autofocus autocomplete="off" spellcheck="false" placeholder="输入指令...">
+        </div>
+    </div>
 </div>
 
 <script>
-    const output = document.getElementById('console-output');
-    const input = document.getElementById('cmd-input');
-    
-    let audioCtx = null;
-    let noiseNode = null;
-    let gainNode = null;
-    let audioStarted = false;
+    const canvas = document.getElementById('waterfallCanvas');
+    const ctx = canvas.getContext('2d');
+    const logBox = document.getElementById('logBox');
+    const cmdInput = document.getElementById('cmdInput');
+    const statusIndicator = document.getElementById('statusIndicator');
 
-    // F12 开发者工具隐藏彩蛋
-    console.log("%c[CLASSIFIED LOG]: Target channel remains fixed at 4625 kHz. Auth code matched with node ID.", "color: #00ff66; font-size: 14px; font-weight: bold;");
+    let isSignalLocked = false;
+    let audioCtx = null, noiseNode = null, gainNode = null, audioStarted = false;
 
-    function printLine(text, className = '') {
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // 动态波形与频谱渲染
+    function renderSpectrum() {
+        ctx.fillStyle = "rgba(2, 6, 3, 0.3)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 背景网格
+        ctx.strokeStyle = "rgba(0, 255, 102, 0.08)";
+        ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += 25) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+
+        // 绘制频率脉冲波
+        ctx.beginPath();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = isSignalLocked ? "#ffaa00" : "#00ff66";
+        ctx.shadowBlur = isSignalLocked ? 10 : 4;
+        ctx.shadowColor = ctx.strokeStyle;
+
+        const slice = canvas.width / 80;
+        let x = 0;
+
+        for (let i = 0; i < 80; i++) {
+            let amp = Math.random() * 8 + 2; // 白噪音杂波
+            
+            // 锁定 4625 信号时，中间出现高能脉冲调幅
+            if (isSignalLocked && i > 32 && i < 48) {
+                amp = Math.sin((i - 32) * 0.2) * 32 + Math.random() * 5;
+            }
+
+            let y = canvas.height / 2 + (Math.random() > 0.5 ? amp : -amp);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+            x += slice;
+        }
+        ctx.stroke();
+
+        requestAnimationFrame(renderSpectrum);
+    }
+    renderSpectrum();
+
+    function printLog(msg, color = '') {
         const div = document.createElement('div');
-        if (className) div.className = className;
-        div.innerHTML = text;
-        output.appendChild(div);
-        output.scrollTop = output.scrollHeight;
+        if (color) div.style.color = color;
+        div.innerHTML = msg;
+        logBox.appendChild(div);
+        logBox.scrollTop = logBox.scrollHeight;
     }
 
-    // 初始化音频（首次输入时静默唤醒）
     function initAudio() {
         if (audioStarted) return;
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
-            
             const bufferSize = audioCtx.sampleRate * 2;
-            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = noiseBuffer.getChannelData(0);
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
             for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
 
             noiseNode = audioCtx.createBufferSource();
-            noiseNode.buffer = noiseBuffer;
+            noiseNode.buffer = buffer;
             noiseNode.loop = true;
-
             gainNode = audioCtx.createGain();
-            gainNode.gain.value = 0.03; // 低背景音量
+            gainNode.gain.value = 0.03;
 
             noiseNode.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             noiseNode.start();
             audioStarted = true;
-        } catch (e) {}
+        } catch(e){}
     }
 
-    input.addEventListener('keydown', function(e) {
+    cmdInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             initAudio();
-            const cmd = this.value.trim();
-            this.value = '';
+            const val = cmdInput.value.trim();
+            cmdInput.value = '';
+            if (!val) return;
 
-            if (!cmd) return;
+            printLog(`&gt; ${val}`);
+            const parts = val.toLowerCase().split(' ');
+            const cmd = parts[0];
+            const param = parts[1];
 
-            printLine(`<span class="prompt">usr@node-8912:~$</span> ${cmd}`);
-
-            const args = cmd.toLowerCase().split(' ');
-            const action = args[0];
-            const param = args[1];
-
-            // 命令行解析逻辑
-            if (action === 'help') {
-                printLine(`Available Commands:<br>
-  <span class="highlight">help</span>       - Display system diagnostic commands.<br>
-  <span class="highlight">tune [freq]</span>- Set receiver frequency in kHz (e.g., 'tune 1000').<br>
-  <span class="highlight">auth [code]</span>- Submit authorization code to unlock sub-terminal.<br>
-  <span class="highlight">clear</span>      - Clear current terminal screen.`);
+            if (cmd === 'help') {
+                printLog(`[CONTROL COMMANDS]:<br>
+  • <b>tune [kHz]</b> - 搜索指定频段 (例: tune 4625)<br>
+  • <b>auth [code]</b> - 提交节点授权码 (例: auth 8912)<br>
+  • <b>clear</b> - 清屏`);
             } 
-            else if (action === 'clear') {
-                output.innerHTML = '';
+            else if (cmd === 'clear') {
+                logBox.innerHTML = '';
             } 
-            else if (action === 'tune') {
+            else if (cmd === 'tune') {
                 if (!param) {
-                    printLine(`[ERROR] Missing frequency parameter. Usage: tune [freq]`, 'error');
-                } else if (param === '4625') {
-                    printLine(`[SDR] LOCKING FREQUENCY 4625 kHz...`, 'highlight');
-                    printLine(`[INTERCEPTED BROADCAST]:<br>
-> "ANVB 8912 UVB-76 TRANSMISSION INTERCEPTED."<br>
-> "REPEAT SEQUENCE: 8 - 9 - 1 - 2"<br>
-> "SYSTEM ACCESS AUTHORIZATION CODE: 8912"`, 'highlight');
+                    printLog(`[ERR] 请指定频率。示例: tune 4625`, '#ff4444');
+                    return;
+                }
+                if (param === '4625') {
+                    isSignalLocked = true;
+                    statusIndicator.innerText = "SIGNAL LOCKED // 4625 kHz";
+                    statusIndicator.style.color = "#ffaa00";
+                    printLog(`[LOCK 4625.0 kHz] 拦截到电台语音循环广播：`, '#ffaa00');
+                    printLog(`&gt; "ANVB 8912 - REPEAT 8912"`);
                     if (gainNode) gainNode.gain.value = 0.01;
                 } else {
-                    printLine(`[SDR] TUNED TO ${param} kHz. [NO SIGNAL // STATIC]`);
+                    isSignalLocked = false;
+                    statusIndicator.innerText = "NO SIGNAL";
+                    statusIndicator.style.color = "#00ff66";
+                    printLog(`[TUNE ${param} kHz] 杂音干扰... 未发现有效载波。`);
                     if (gainNode) gainNode.gain.value = 0.04;
                 }
             } 
-            else if (action === 'auth') {
+            else if (cmd === 'auth') {
                 if (param === '8912') {
-                    printLine(`[AUTH OK] Authorization accepted. Elevating privileges...`, 'highlight');
-                    printLine(`[REDIRECTING] Establishing handshake with STAGE 2 analyzer...`, 'highlight');
+                    printLog(`[AUTH SUCCESS] 凭证正确。正在进入 Stage 2...`, '#00ff66');
                     setTimeout(() => {
                         window.location.href = 'stage2.html';
-                    }, 1500);
+                    }, 1200);
                 } else {
-                    printLine(`[AUTH FAILED] Invalid authorization key for NODE_8912.`, 'error');
+                    printLog(`[AUTH FAILED] 授权码无效。`, '#ff4444');
                 }
             } 
             else {
-                printLine(`bash: ${action}: command not found. Type 'help' for available commands.`, 'error');
+                printLog(`未知指令: ${cmd}。输入 'help' 查看指令集。`, '#ff4444');
             }
         }
     });
 
-    // 移动端点击屏幕任意位置强制拉起输入框焦点
-    document.addEventListener('click', () => input.focus());
+    document.addEventListener('click', () => cmdInput.focus());
 </script>
 
 </body>
