@@ -372,7 +372,7 @@
                         statusInd.className = "warn-cn";
                         if (noiseGain) noiseGain.gain.value = 0.003;
                         print(`[信号成功锁定] 已消除杂波！请观察上方示波器屏显浮现的验证码！`, 'success-cn');
-                        print(`请输入：<span class="highlight-cn">验证码</span> 完成验证：）。`, 'warn-cn');
+                        print(`请输入：<span class="highlight-cn">验证码</span> 完成验证。`, 'warn-cn');
                     } else {
                         sysState = 3;
                         statusInd.innerText = "检测到信号 (重度干扰)";
@@ -402,7 +402,7 @@
                         statusInd.className = "warn-cn";
                         if (noiseGain) noiseGain.gain.value = 0.003;
                         print(`[信号解调完成] 杂波已清除！示波器正高亮显示解调结果！`, 'success-cn');
-                        print(`请输入：<span class="highlight-cn">auth 8912</span> 完成第一关验证提权。`, 'warn-cn');
+                        print(`请输入：<span class="highlight-cn">验证码</span> 完成验证提权。`, 'warn-cn');
                     }
                 } else {
                     print(`用法：输入 <span class="highlight-cn">filter on</span> 开启滤波`, 'danger-cn');
@@ -412,7 +412,7 @@
             else if (cmd === 'auth') {
                 if (param === '8912') {
                     playRelaySound();
-                    print(`[授权成功] 身份验证通过！正在接入第二关控制台...`, 'success-cn');
+                    print(`[授权成功] 身份验证通过！正在接入控制台...`, 'success-cn');
                     document.body.style.boxShadow = "inset 0 0 100px #00ff66";
                     setTimeout(() => {
                         window.location.href = 'stage2.html';
@@ -429,7 +429,7 @@
   • <span class="highlight-cn">enable-antenna</span> - 强制激活外部天线供电<br>
   • <span class="highlight-cn">tune [频率]</span> - 调频接收（例：tune xxxx）<br>
   • <span class="highlight-cn">filter on</span> - 开启音频滤波电路降噪<br>
-  • <span class="highlight-cn">auth [代码]</span> - 提交通关验证码（例：auth xxxx）<br>
+  • <span class="highlight-cn">auth [代码]</span> - 提交接入控制台验证码（例：auth xxxx）<br>
   • <span class="highlight-cn">clear</span> - 清理屏幕`);
             }
             else if (cmd === 'clear') { logBox.innerHTML = ''; }
