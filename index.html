@@ -1,343 +1,234 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WebSDR // 短波节点 - NODE_8912</title>
+    <title>TERMINAL // NODE_8912_SDR</title>
     <style>
         :root {
-            --amber: #ffb000;
-            --amber-glow: rgba(255, 176, 0, 0.4);
-            --amber-dim: #5c4100;
-            --bg-dark: #070709;
-            --panel-bg: #111216;
-            --crt-bg: #030402;
+            --term-green: #00ff66;
+            --term-dim: rgba(0, 255, 102, 0.4);
+            --bg-color: #050805;
         }
 
         * {
             box-sizing: border-box;
-            user-select: none; /* 防止误触选中文字打断沉浸感 */
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            background-color: var(--bg-dark);
-            color: var(--amber);
+            background-color: var(--bg-color);
+            color: var(--term-green);
             font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 20px;
             min-height: 100vh;
-            margin: 0;
-            padding: 15px;
-            overflow-x: hidden;
-        }
-
-        /* 复古机箱外壳 */
-        .radio-container {
-            background: var(--panel-bg);
-            border: 3px solid #22242b;
-            border-radius: 8px;
-            padding: 24px;
-            width: 100%;
-            max-width: 580px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(0,0,0,0.8);
-            position: relative;
-        }
-
-        .header {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--amber-dim);
-            padding-bottom: 10px;
-            margin-bottom: 18px;
-            font-size: 11px;
-            letter-spacing: 1px;
+            flex-direction: column;
+            overflow-x: hidden;
+            text-shadow: 0 0 5px var(--term-dim);
         }
 
-        .status-dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--amber-dim);
-            margin-right: 5px;
-        }
-
-        .status-dot.active {
-            background: var(--amber);
-            box-shadow: 0 0 8px var(--amber);
-        }
-
-        /* CRT 显示屏与扫描线效果 */
-        .crt-screen {
-            background: var(--crt-bg);
-            border: 2px solid var(--amber-dim);
-            border-radius: 4px;
-            padding: 15px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
-        }
-
-        /* 模拟老式 CRT 显示屏网格与扫描线 */
-        .crt-screen::before {
+        /* 模拟 CRT 显示屏扫描线与暗角 */
+        body::before {
             content: " ";
             display: block;
-            position: absolute;
+            position: fixed;
             top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-            background-size: 100% 4px;
-            z-index: 2;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), 
+                        radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.8) 100%);
+            background-size: 100% 4px, 100% 100%;
+            z-index: 100;
             pointer-events: none;
         }
 
-        .freq-display {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .freq-num {
-            font-size: 44px;
-            font-weight: 900;
-            letter-spacing: 3px;
-            text-shadow: 0 0 12px var(--amber-glow);
-        }
-
-        .freq-unit { 
-            font-size: 14px; 
-            color: var(--amber-dim); 
-        }
-
-        /* 调频滑块优化（适合手机指尖触控） */
-        .tuner-group {
-            margin: 22px 0;
-        }
-
-        .tuner-label {
-            font-size: 11px;
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            color: #8a8e9b;
-        }
-
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 38px;
-            background: #000;
-            border: 1px solid var(--amber-dim);
-            border-radius: 4px;
-            outline: none;
-        }
-
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 24px;
-            height: 36px;
-            background: var(--amber);
-            border-radius: 2px;
-            cursor: pointer;
-            box-shadow: 0 0 10px var(--amber);
-        }
-
-        /* 终端日志文本 */
-        .signal-log {
-            height: 100px;
+        .system-header {
+            border-bottom: 1px dashed var(--term-green);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
             font-size: 12px;
-            line-height: 1.6;
-            color: #a0a5b5;
-            overflow-y: auto;
-            word-break: break-all;
-            margin-top: 10px;
-            user-select: text;
+            opacity: 0.8;
+            line-height: 1.4;
         }
 
-        .signal-log.active {
-            color: var(--amber);
-            text-shadow: 0 0 5px var(--amber-glow);
-        }
-
-        /* 三端响应式输入控制区 */
-        .pass-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        input[type=text] {
+        /* 终端历史输出区域 */
+        #console-output {
             flex: 1;
-            background: #000;
-            border: 1px solid var(--amber-dim);
-            color: var(--amber);
-            padding: 12px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.6;
+            word-break: break-all;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+        }
+
+        /* 命令行输入区 */
+        .cmd-line {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .prompt {
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+
+        #cmd-input {
+            background: transparent;
+            border: none;
+            color: var(--term-green);
             font-family: inherit;
             font-size: 14px;
             outline: none;
-            border-radius: 4px;
-            user-select: text;
+            flex: 1;
+            text-shadow: 0 0 5px var(--term-dim);
+            caret-color: var(--term-green);
         }
 
-        input[type=text]:focus {
-            border-color: var(--amber);
-            box-shadow: 0 0 8px var(--amber-glow);
-        }
-
-        button {
-            background: var(--amber);
-            color: #000;
-            border: none;
-            padding: 12px 22px;
+        .highlight {
+            color: #fff;
             font-weight: bold;
-            font-family: inherit;
-            font-size: 14px;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: all 0.2s ease;
+            text-shadow: 0 0 8px #fff;
         }
 
-        button:active {
-            transform: scale(0.97);
-            background: #fff;
+        .error {
+            color: #ff3333;
+            text-shadow: 0 0 5px rgba(255, 51, 51, 0.5);
         }
 
-        .footer-hint {
-            font-size: 10px;
-            color: #555a66;
-            margin-top: 18px;
-            text-align: center;
-        }
-
-        /* 针对手机端（Mobile）体验适配 */
         @media (max-width: 480px) {
-            .radio-container { padding: 16px; }
-            .freq-num { font-size: 34px; }
-            .pass-group { flex-direction: column; }
-            button { width: 100%; }
+            body { padding: 10px; }
+            #console-output, #cmd-input, .cmd-line { font-size: 12px; }
         }
     </style>
 </head>
 <body>
 
-<div class="radio-container">
-    <div class="header">
-        <span>SDR RECEIVER // MODEL-IV</span>
-        <span><span class="status-dot" id="statusDot"></span><span id="statusText">OFFLINE</span></span>
-    </div>
+<div class="system-header">
+    OS MEMORY: 640K OK // SDR DAEMON v4.19.0-sys-rc2<br>
+    UNAUTHORIZED ACCESS TO THIS NODE IS A FEDERAL OFFENSE.<br>
+    SYSTEM STATUS: DEGRADED // SIGNAL ACQUISITION LOCK OUT
+</div>
 
-    <!-- CRT 主屏 -->
-    <div class="crt-screen">
-        <div class="freq-display">
-            <span class="freq-num" id="freqVal">1000</span> <span class="freq-unit">kHz</span>
-        </div>
-        <div class="signal-log" id="logBox">
-            [SYSTEM] 点击屏幕任意位置启动短波接收机音轨...
-        </div>
-    </div>
+<!-- 终端历史日志 -->
+<div id="console-output">
+[SYSTEM INIT 1999-10-14] Mounting /dev/sdr0... OK.<br>
+[SYSTEM WARN] Frequency receiver unbound. Local audio subsystem dormant.<br>
+[SYSTEM HINT] Type 'help' to display available system diagnostics.
+</div>
 
-    <!-- 调频滑块控制区 -->
-    <div class="tuner-group">
-        <div class="tuner-label">
-            <span>调谐频段</span>
-            <span>1000 - 9999 kHz</span>
-        </div>
-        <input type="range" id="freqSlider" min="1000" max="9999" value="1000" step="1" oninput="updateFreq(this.value)">
-    </div>
-
-    <!-- 解锁交互区 -->
-    <div class="pass-group">
-        <input type="text" id="passInput" placeholder="输入解调出的密码..." autocomplete="off">
-        <button onclick="checkPass()">解调并连接</button>
-    </div>
-
-    <div class="footer-hint">
-        提示：寻找旧时代 UVB-76 (The Buzzer) 蜂鸣电台的标称频率...
-    </div>
+<!-- 命令行交互 -->
+<div class="cmd-line">
+    <span class="prompt">usr@node-8912:~$</span>
+    <input type="text" id="cmd-input" autofocus autocomplete="off" spellcheck="false">
 </div>
 
 <script>
+    const output = document.getElementById('console-output');
+    const input = document.getElementById('cmd-input');
+    
     let audioCtx = null;
     let noiseNode = null;
     let gainNode = null;
     let audioStarted = false;
 
-    // 初始化短波白噪音音频引擎
+    // F12 开发者工具隐藏彩蛋
+    console.log("%c[CLASSIFIED LOG]: Target channel remains fixed at 4625 kHz. Auth code matched with node ID.", "color: #00ff66; font-size: 14px; font-weight: bold;");
+
+    function printLine(text, className = '') {
+        const div = document.createElement('div');
+        if (className) div.className = className;
+        div.innerHTML = text;
+        output.appendChild(div);
+        output.scrollTop = output.scrollHeight;
+    }
+
+    // 初始化音频（首次输入时静默唤醒）
     function initAudio() {
         if (audioStarted) return;
-        
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
             
             const bufferSize = audioCtx.sampleRate * 2;
             const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const output = noiseBuffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                output[i] = Math.random() * 2 - 1;
-            }
+            const data = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
 
             noiseNode = audioCtx.createBufferSource();
             noiseNode.buffer = noiseBuffer;
             noiseNode.loop = true;
 
             gainNode = audioCtx.createGain();
-            gainNode.gain.value = 0.05;
+            gainNode.gain.value = 0.03; // 低背景音量
 
             noiseNode.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             noiseNode.start();
-            
             audioStarted = true;
-            document.getElementById('statusDot').className = "status-dot active";
-            document.getElementById('statusText').innerText = "ONLINE";
-            document.getElementById('logBox').innerText = "[SYSTEM] 短波音频已就绪。请滑动调频轴寻找信号...";
-        } catch (e) {
-            console.log("Audio Init Warning:", e);
-        }
+        } catch (e) {}
     }
 
-    // 绑定触摸/点击以激活移动端音频权限
-    document.addEventListener('touchstart', initAudio, { once: true });
-    document.addEventListener('click', initAudio, { once: true });
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            initAudio();
+            const cmd = this.value.trim();
+            this.value = '';
 
-    // 调频逻辑
-    function updateFreq(val) {
-        document.getElementById('freqVal').innerText = val;
-        const logBox = document.getElementById('logBox');
-        const statusText = document.getElementById('statusText');
+            if (!cmd) return;
 
-        if (val === "4625") {
-            logBox.className = "signal-log active";
-            statusText.innerText = "SIGNAL LOCKED";
-            
-            logBox.innerHTML = `
-                [4625 kHz - 拦截到短波广播]:<br>
-                “这里是 UVB-76... 听到请回答...”<br>
-                “重复指令序列：8 - 9 - 1 - 2”<br>
-                “重复：8912... 它们在地下三层。”
-            `;
+            printLine(`<span class="prompt">usr@node-8912:~$</span> ${cmd}`);
 
-            if (gainNode) gainNode.gain.value = 0.01; // 锁定信号时降低噪点
+            const args = cmd.toLowerCase().split(' ');
+            const action = args[0];
+            const param = args[1];
 
-        } else {
-            logBox.className = "signal-log";
-            statusText.innerText = "SEARCHING...";
-            logBox.innerText = `[${val} kHz]: 沙沙... (虚无的白噪音)`;
-            if (gainNode) gainNode.gain.value = 0.05;
+            // 命令行解析逻辑
+            if (action === 'help') {
+                printLine(`Available Commands:<br>
+  <span class="highlight">help</span>       - Display system diagnostic commands.<br>
+  <span class="highlight">tune [freq]</span>- Set receiver frequency in kHz (e.g., 'tune 1000').<br>
+  <span class="highlight">auth [code]</span>- Submit authorization code to unlock sub-terminal.<br>
+  <span class="highlight">clear</span>      - Clear current terminal screen.`);
+            } 
+            else if (action === 'clear') {
+                output.innerHTML = '';
+            } 
+            else if (action === 'tune') {
+                if (!param) {
+                    printLine(`[ERROR] Missing frequency parameter. Usage: tune [freq]`, 'error');
+                } else if (param === '4625') {
+                    printLine(`[SDR] LOCKING FREQUENCY 4625 kHz...`, 'highlight');
+                    printLine(`[INTERCEPTED BROADCAST]:<br>
+> "ANVB 8912 UVB-76 TRANSMISSION INTERCEPTED."<br>
+> "REPEAT SEQUENCE: 8 - 9 - 1 - 2"<br>
+> "SYSTEM ACCESS AUTHORIZATION CODE: 8912"`, 'highlight');
+                    if (gainNode) gainNode.gain.value = 0.01;
+                } else {
+                    printLine(`[SDR] TUNED TO ${param} kHz. [NO SIGNAL // STATIC]`);
+                    if (gainNode) gainNode.gain.value = 0.04;
+                }
+            } 
+            else if (action === 'auth') {
+                if (param === '8912') {
+                    printLine(`[AUTH OK] Authorization accepted. Elevating privileges...`, 'highlight');
+                    printLine(`[REDIRECTING] Establishing handshake with STAGE 2 analyzer...`, 'highlight');
+                    setTimeout(() => {
+                        window.location.href = 'stage2.html';
+                    }, 1500);
+                } else {
+                    printLine(`[AUTH FAILED] Invalid authorization key for NODE_8912.`, 'error');
+                }
+            } 
+            else {
+                printLine(`bash: ${action}: command not found. Type 'help' for available commands.`, 'error');
+            }
         }
-    }
+    });
 
-    // 验证逻辑
-    function checkPass() {
-        const input = document.getElementById('passInput').value.trim();
-        if (input === '8912') {
-            alert("【解调成功】：信号已匹配。正在请求连接至第二关...");
-            // window.location.href = 'stage2.html';
-        } else {
-            alert("【解调失败】：识别码无效，无法建立短波握手。");
-        }
-    }
+    // 移动端点击屏幕任意位置强制拉起输入框焦点
+    document.addEventListener('click', () => input.focus());
 </script>
 
 </body>
