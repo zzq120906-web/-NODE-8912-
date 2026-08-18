@@ -22,7 +22,6 @@
             overflow: hidden;
         }
 
-        /* 沉浸式场景背景 */
         .viewport {
             position: relative;
             width: 100vw; height: 100vh;
@@ -45,7 +44,6 @@
             transition: background 1s ease;
         }
 
-        /* CRT 显示屏外壳 */
         .crt-frame {
             position: relative; z-index: 10;
             width: 94%; max-width: 760px;
@@ -56,7 +54,6 @@
             backdrop-filter: blur(6px);
         }
 
-        /* CRT 扫描线效应 */
         .crt-frame::after {
             content: " "; position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -77,7 +74,6 @@
             padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px;
         }
 
-        /* 频谱示波器 */
         #spectrumCanvas {
             width: 100%; height: 125px;
             background: #010502;
@@ -86,7 +82,6 @@
             border-radius: 4px;
         }
 
-        /* 交互日志区 */
         .terminal-log {
             height: 170px; overflow-y: auto;
             color: var(--green); font-size: 13px; line-height: 1.6;
@@ -99,7 +94,6 @@
         .terminal-log::-webkit-scrollbar { width: 4px; }
         .terminal-log::-webkit-scrollbar-thumb { background: var(--dim-green); border-radius: 2px; }
 
-        /* 命令行输入框 */
         .command-bar {
             display: flex; align-items: center;
             background: rgba(0, 0, 0, 0.85);
@@ -158,23 +152,20 @@
     const statusInd = document.getElementById('statusInd');
     const screenGlow = document.getElementById('screenGlow');
 
-    // 状态管理: 0:待机, 1:已开机(天线离线), 2:天线已开启, 3:已调频(有干扰), 4:降噪成功(锁定)
     let sysState = 0; 
     let filterActive = false;
-    let audioCtx = null, noiseNode = null, noiseGain = null, beepOsc = null;
+    let audioCtx = null, noiseNode = null, noiseGain = null;
 
     function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
     window.addEventListener('resize', resize);
     resize();
 
-    // 🔊 真实 WebAudio 声音合成器
     function initAudio() {
         if (audioCtx) return;
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
 
-            // 白噪音源（模拟电台沙沙声）
             const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
             const data = buf.getChannelData(0);
             for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
@@ -191,7 +182,6 @@
         } catch(e){}
     }
 
-    // 键盘音效
     function playKeySound() {
         if (!audioCtx) return;
         const osc = audioCtx.createOscillator();
@@ -204,7 +194,6 @@
         osc.start(); osc.stop(audioCtx.currentTime + 0.04);
     }
 
-    // 机械硬盘/继电器音效
     function playRelaySound() {
         if (!audioCtx) return;
         for (let i = 0; i < 3; i++) {
@@ -221,12 +210,10 @@
         }
     }
 
-    // 示波器与动态波形渲染
     function renderSpectrum() {
         ctx.fillStyle = "rgba(1, 5, 2, 0.22)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // 背景网格线
         ctx.strokeStyle = "rgba(0, 255, 102, 0.08)";
         ctx.lineWidth = 1;
         for (let x = 0; x < canvas.width; x += 30) {
@@ -236,7 +223,6 @@
         ctx.beginPath();
         ctx.lineWidth = 1.5;
         
-        // 动态样式设置
         if (sysState === 4) {
             ctx.strokeStyle = "#ffaa00";
             ctx.shadowBlur = 10;
@@ -257,8 +243,8 @@
             let amp = 2;
             if (sysState === 1) amp = Math.random() * 4;
             else if (sysState === 2) amp = Math.random() * 10 + 2;
-            else if (sysState === 3) amp = Math.random() * 35 + 5; // 杂波干扰
-            else if (sysState === 4) { // 规则信号
+            else if (sysState === 3) amp = Math.random() * 35 + 5;
+            else if (sysState === 4) {
                 if (i > 32 && i < 58) {
                     amp = Math.sin((i - 32) * 0.25) * 38 + Math.random() * 4;
                 } else {
@@ -272,7 +258,6 @@
         }
         ctx.stroke();
 
-        // 最终解调输出（中文高亮）
         if (sysState === 4) {
             ctx.font = "bold 18px 'Microsoft YaHei', sans-serif";
             ctx.fillStyle = "#ffaa00";
@@ -293,7 +278,6 @@
         logBox.scrollTop = logBox.scrollHeight;
     }
 
-    // 命令行交互引擎
     cmdInput.addEventListener('keydown', (e) => {
         initAudio();
         playKeySound();
@@ -308,7 +292,6 @@
             const cmd = parts[0].toLowerCase();
             const param = parts[1] ? parts[1].toLowerCase() : '';
 
-            // 1. 启动系统
             if (cmd === 'boot') {
                 if (sysState >= 1) {
                     print(`[提示] 系统已经处于运行状态。`, 'warn-cn');
@@ -328,7 +311,6 @@
             else if (sysState === 0) {
                 print(`[错误] 终端尚未启动。请先输入 <span class="highlight-cn">boot</span> 初始化系统。`, 'danger-cn');
             }
-            // 2. 查看文件与日志
             else if (cmd === 'ls') {
                 playRelaySound();
                 print(`- 硬件日志.log （天线与模块诊断）<br>- 广播日志_1999.txt （前人留下的调频记录）`);
@@ -343,7 +325,6 @@
                     print(`用法错误：请输入 cat 硬件日志.log 或 cat 广播日志_1999.txt`, 'danger-cn');
                 }
             }
-            // 3. 激活天线
             else if (cmd === 'enable-antenna') {
                 if (sysState >= 2) {
                     print(`[提示] 天线阵列已经处于激活状态。`, 'warn-cn');
@@ -358,7 +339,6 @@
                 print(`[硬件响应] 继电器吸合！天线阵列已强行高压启动。`, 'success-cn');
                 print(`[提示] 请使用调频指令 <span class="highlight-cn">tune [频率]</span> 寻找电台信号（例：tune 4625）。`);
             }
-            // 4. 调频搜寻
             else if (cmd === 'tune') {
                 if (sysState < 2) {
                     print(`[错误] 天线未激活，无法接收信号！请先输入 <span class="highlight-cn">enable-antenna</span>`, 'danger-cn');
@@ -372,7 +352,6 @@
                         statusInd.className = "warn-cn";
                         if (noiseGain) noiseGain.gain.value = 0.003;
                         print(`[信号成功锁定] 已消除杂波！请观察上方示波器屏显浮现的验证码！`, 'success-cn');
-                        print(`请输入：<span class="highlight-cn">auth 8912</span> 完成第一关验证提权。`, 'warn-cn');
                     } else {
                         sysState = 3;
                         statusInd.innerText = "检测到信号 (重度干扰)";
@@ -389,7 +368,6 @@
                     print(`[TUNE ${param || ''}] 只有一片死寂的白噪音... (请阅读 cat 广播日志_1999.txt)`);
                 }
             }
-            // 5. 开启滤波
             else if (cmd === 'filter') {
                 if (param === 'on') {
                     filterActive = true;
@@ -402,13 +380,11 @@
                         statusInd.className = "warn-cn";
                         if (noiseGain) noiseGain.gain.value = 0.003;
                         print(`[信号解调完成] 杂波已清除！示波器正高亮显示解调结果！`, 'success-cn');
-                        print(`请输入：<span class="highlight-cn">auth 8912</span> 完成第一关验证提权。`, 'warn-cn');
                     }
                 } else {
                     print(`用法：输入 <span class="highlight-cn">filter on</span> 开启滤波`, 'danger-cn');
                 }
             }
-            // 6. 通关验证
             else if (cmd === 'auth') {
                 if (param === '8912') {
                     playRelaySound();
@@ -421,7 +397,6 @@
                     print(`[授权失败] 识别码不正确。正确代码已高亮显示在上方示波器屏幕上。`, 'danger-cn');
                 }
             }
-            // 常用帮助
             else if (cmd === 'help') {
                 print(`【可用系统指令列表】:<br>
   • <span class="highlight-cn">ls</span> - 列出当前目录下的日志文件<br>
