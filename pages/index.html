@@ -154,7 +154,7 @@
 
     let sysState = 0; 
     let filterActive = false;
-    let audioCtx = null, noiseNode = null, noiseGain = null;
+    let audioCtx = null, noiseGain = null;
 
     function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
     window.addEventListener('resize', resize);
@@ -170,7 +170,7 @@
             const data = buf.getChannelData(0);
             for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
 
-            noiseNode = audioCtx.createBufferSource();
+            const noiseNode = audioCtx.createBufferSource();
             noiseNode.buffer = buf; noiseNode.loop = true;
 
             noiseGain = audioCtx.createGain();
