@@ -3,162 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TERMINAL // FORGOTTEN SDR-NODE</title>
+    <title>SDR-NODE // FORGOTTEN STATION</title>
     <style>
         :root {
-            --green-glow: #00ff66;
-            --amber-glow: #ffaa00;
+            --green: #00ff66;
+            --amber: #ffaa00;
+            --red: #ff3333;
+            --dim-green: rgba(0, 255, 102, 0.25);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0; padding: 0;
-            user-select: none;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
         body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000;
+            width: 100%; height: 100%;
+            background: #000;
             font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
         }
 
-        /* 1. 全屏沉浸式废弃电台背景图 */
+        /* 1. 全屏废弃视角背景 */
         .viewport {
             position: relative;
-            width: 100vw;
-            height: 100vh;
-            /* 高精拟真废弃防空洞/无线电台背景 */
+            width: 100vw; height: 100vh;
             background: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: flex; justify-content: center; align-items: center;
             filter: contrast(1.1) brightness(0.8);
         }
 
-        /* 暗角与废弃防空洞环境滤镜 */
         .ambient-vignette {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.92) 100%);
-            pointer-events: none;
-            z-index: 1;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(0,0,0,0.3) 30%, rgba(0,0,0,0.95) 100%);
+            pointer-events: none; z-index: 1;
         }
 
-        /* 呼吸照明效果：模拟屏幕微光照亮废弃房间 */
-        .screen-glow-environment {
-            position: absolute;
-            width: 600px;
-            height: 400px;
-            background: rgba(0, 255, 102, 0.08);
-            border-radius: 50%;
-            filter: blur(80px);
-            pointer-events: none;
-            z-index: 2;
-            animation: pulse-glow 4s infinite alternate ease-in-out;
+        /* 环境荧光（随着系统激活逐渐变亮） */
+        .screen-glow {
+            position: absolute; width: 650px; height: 420px;
+            background: rgba(0, 255, 102, 0.05);
+            border-radius: 50%; filter: blur(90px);
+            pointer-events: none; z-index: 2;
+            transition: background 1.5s ease;
         }
 
-        @keyframes pulse-glow {
-            0% { opacity: 0.4; }
-            100% { opacity: 0.8; }
-        }
-
-        /* 2. 嵌入在设备上的 CRT 显示屏 */
-        .crt-hardware-frame {
-            position: relative;
-            z-index: 10;
-            width: 90%;
-            max-width: 640px;
-            background: rgba(5, 12, 7, 0.88);
-            border: 2px solid rgba(0, 255, 102, 0.25);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.95),
-                        inset 0 0 15px rgba(0, 255, 102, 0.1);
+        /* 2. 复古硬件显示屏 */
+        .crt-frame {
+            position: relative; z-index: 10;
+            width: 92%; max-width: 700px;
+            background: rgba(3, 8, 4, 0.94);
+            border: 2px solid var(--dim-green);
+            border-radius: 10px; padding: 20px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.95), inset 0 0 15px rgba(0, 255, 102, 0.1);
             backdrop-filter: blur(4px);
         }
 
-        /* CRT 动态扫描线与灰尘玻璃质感 */
-        .crt-hardware-frame::after {
-            content: " ";
-            position: absolute;
+        .crt-frame::after {
+            content: " "; position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
-                        linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
-            background-size: 100% 4px, 6px 100%;
-            pointer-events: none;
-            border-radius: 10px;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%);
+            background-size: 100% 4px; pointer-events: none; border-radius: 8px;
         }
 
-        /* 状态顶栏 */
         .screen-header {
-            display: flex;
-            justify-content: space-between;
-            color: var(--green-glow);
-            font-size: 11px;
-            border-bottom: 1px solid rgba(0, 255, 102, 0.2);
-            padding-bottom: 8px;
-            margin-bottom: 12px;
-            letter-spacing: 1px;
-            text-shadow: 0 0 4px var(--green-glow);
+            display: flex; justify-content: space-between;
+            color: var(--green); font-size: 11px;
+            border-bottom: 1px solid var(--dim-green);
+            padding-bottom: 6px; margin-bottom: 12px;
+            letter-spacing: 1px; text-shadow: 0 0 4px var(--green);
         }
 
-        /* Canvas 动态瀑布图/波形屏 */
-        #waterfallCanvas {
-            width: 100%;
-            height: 90px;
-            background: #020603;
-            border: 1px solid rgba(0, 255, 102, 0.15);
-            margin-bottom: 12px;
-            display: block;
+        /* 动态波形与频谱 */
+        #spectrumCanvas {
+            width: 100%; height: 110px;
+            background: #010402;
+            border: 1px solid var(--dim-green);
+            margin-bottom: 12px; display: block;
         }
 
-        /* 终端日志打印区 */
+        /* 日志输出区 */
         .terminal-log {
-            height: 110px;
-            overflow-y: auto;
-            color: var(--green-glow);
-            font-size: 12px;
-            line-height: 1.5;
-            word-break: break-all;
-            margin-bottom: 10px;
+            height: 150px; overflow-y: auto;
+            color: var(--green); font-size: 12px; line-height: 1.6;
+            word-break: break-all; margin-bottom: 12px;
             text-shadow: 0 0 4px rgba(0, 255, 102, 0.4);
             user-select: text;
         }
 
-        /* 命令行输入框 */
+        /* 命令行输入区 */
         .command-bar {
-            display: flex;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid rgba(0, 255, 102, 0.3);
-            padding: 8px 10px;
-            border-radius: 4px;
+            display: flex; align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--dim-green);
+            padding: 8px 12px; border-radius: 4px;
         }
 
-        .prompt {
-            color: var(--green-glow);
-            margin-right: 8px;
-            font-size: 13px;
-        }
-
+        .prompt { color: var(--green); margin-right: 8px; font-size: 13px; }
         .cmd-input {
-            background: transparent;
-            border: none;
-            outline: none;
-            color: #fff;
-            font-family: inherit;
-            font-size: 13px;
-            flex: 1;
-            text-shadow: 0 0 6px var(--green-glow);
-            user-select: text;
-        }
-
-        @media (max-width: 480px) {
-            .crt-hardware-frame { padding: 14px; width: 95%; }
-            .terminal-log { height: 90px; font-size: 11px; }
-            #waterfallCanvas { height: 70px; }
+            background: transparent; border: none; outline: none;
+            color: #fff; font-family: inherit; font-size: 13px; flex: 1;
+            text-shadow: 0 0 6px var(--green); user-select: text;
         }
     </style>
 </head>
@@ -166,54 +108,99 @@
 
 <div class="viewport">
     <div class="ambient-vignette"></div>
-    <div class="screen-glow-environment"></div>
+    <div class="screen-glow" id="screenGlow"></div>
 
-    <!-- 硬件显示屏主体 -->
-    <div class="crt-hardware-frame">
+    <div class="crt-frame">
         <div class="screen-header">
-            <span>FORGOTTEN_NODE // RX-4625</span>
-            <span id="statusIndicator">SYSTEM DORMANT</span>
+            <span>FORGOTTEN_SDR // NODE_01</span>
+            <span id="statusInd" style="color: var(--amber)">SYSTEM STANDBY</span>
         </div>
 
-        <!-- 频谱瀑布波形图 -->
-        <canvas id="waterfallCanvas"></canvas>
+        <canvas id="spectrumCanvas"></canvas>
 
-        <!-- 终端控制台日志 -->
         <div class="terminal-log" id="logBox">
-[SYS_BOOT] Substation receiver power restored.<br>
-[SYS_WARN] Main antenna misaligned. High static ratio.<br>
-[SYS_HINT] Type 'help' to access console commands.<br>
+[PWR] 备用电源加载完成。系统处于待机状态。<br>
+[SYS] 请输入 <b style="color:#fff">boot</b> 启动主板控制台，或敲击任意键初始化音频组件...<br>
 --------------------------------------------------
         </div>
 
-        <!-- 指令输入行 -->
         <div class="command-bar">
-            <span class="prompt">&gt;</span>
-            <input type="text" class="cmd-input" id="cmdInput" autofocus autocomplete="off" spellcheck="false" placeholder="输入指令...">
+            <span class="prompt">guest@node-01:~$</span>
+            <input type="text" class="cmd-input" id="cmdInput" autofocus autocomplete="off" spellcheck="false" placeholder="输入 boot 启动...">
         </div>
     </div>
 </div>
 
 <script>
-    const canvas = document.getElementById('waterfallCanvas');
+    const canvas = document.getElementById('spectrumCanvas');
     const ctx = canvas.getContext('2d');
     const logBox = document.getElementById('logBox');
     const cmdInput = document.getElementById('cmdInput');
-    const statusIndicator = document.getElementById('statusIndicator');
+    const statusInd = document.getElementById('statusInd');
+    const screenGlow = document.getElementById('screenGlow');
 
-    let isSignalLocked = false;
-    let audioCtx = null, noiseNode = null, gainNode = null, audioStarted = false;
+    let stage = 0; // 0: 待机, 1: 已启动, 2: 调频成功
+    let audioCtx = null, noiseGain = null;
 
-    function resize() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-    }
+    function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
     window.addEventListener('resize', resize);
     resize();
 
-    // 动态波形与频谱渲染
+    // 🔊 真实 WebAudio 音效合成引擎（无需外链音频资源）
+    function initAudio() {
+        if (audioCtx) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+
+        // 创建杂音源
+        const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buf; noise.loop = true;
+
+        noiseGain = audioCtx.createGain();
+        noiseGain.gain.value = 0.01;
+
+        noise.connect(noiseGain);
+        noiseGain.connect(audioCtx.destination);
+        noise.start();
+    }
+
+    // 播放键盘敲击声音效
+    function playKeySound() {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(120 + Math.random() * 80, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    // 播放硬盘读取机械咔哒声
+    function playHDDSound() {
+        if (!audioCtx) return;
+        for (let i = 0; i < 4; i++) {
+            setTimeout(() => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800 + Math.random() * 400, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.03);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.03);
+            }, i * 70);
+        }
+    }
+
+    // 绘制示波器与动态波形
     function renderSpectrum() {
-        ctx.fillStyle = "rgba(2, 6, 3, 0.3)";
+        ctx.fillStyle = "rgba(1, 4, 2, 0.25)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // 背景网格
@@ -223,36 +210,40 @@
             ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
         }
 
-        // 绘制频率脉冲波
         ctx.beginPath();
         ctx.lineWidth = 1.5;
-        ctx.strokeStyle = isSignalLocked ? "#ffaa00" : "#00ff66";
-        ctx.shadowBlur = isSignalLocked ? 10 : 4;
+        ctx.strokeStyle = stage === 2 ? "#ffaa00" : (stage === 1 ? "#00ff66" : "rgba(0,255,102,0.3)");
+        ctx.shadowBlur = stage === 2 ? 10 : 3;
         ctx.shadowColor = ctx.strokeStyle;
 
         const slice = canvas.width / 80;
         let x = 0;
 
         for (let i = 0; i < 80; i++) {
-            let amp = Math.random() * 8 + 2; // 白噪音杂波
-            
-            // 锁定 4625 信号时，中间出现高能脉冲调幅
-            if (isSignalLocked && i > 32 && i < 48) {
-                amp = Math.sin((i - 32) * 0.2) * 32 + Math.random() * 5;
+            let amp = stage === 0 ? Math.random() * 2 : Math.random() * 8 + 2;
+            if (stage === 2 && i > 30 && i < 50) {
+                amp = Math.sin((i - 30) * 0.3) * 32 + Math.random() * 5;
             }
-
             let y = canvas.height / 2 + (Math.random() > 0.5 ? amp : -amp);
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             x += slice;
         }
         ctx.stroke();
+
+        // 锁定调频后在 Canvas 上大字呈现
+        if (stage === 2) {
+            ctx.font = "bold 22px 'Courier New'";
+            ctx.fillStyle = "#ffaa00";
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = "#ffaa00";
+            ctx.fillText("DECODED PASSCODE: 8912", canvas.width / 2 - 120, canvas.height / 2 + 7);
+        }
 
         requestAnimationFrame(renderSpectrum);
     }
     renderSpectrum();
 
-    function printLog(msg, color = '') {
+    function print(msg, color = '') {
         const div = document.createElement('div');
         if (color) div.style.color = color;
         div.innerHTML = msg;
@@ -260,83 +251,83 @@
         logBox.scrollTop = logBox.scrollHeight;
     }
 
-    function initAudio() {
-        if (audioStarted) return;
-        try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            audioCtx = new AudioContext();
-            const bufferSize = audioCtx.sampleRate * 2;
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
-            noiseNode = audioCtx.createBufferSource();
-            noiseNode.buffer = buffer;
-            noiseNode.loop = true;
-            gainNode = audioCtx.createGain();
-            gainNode.gain.value = 0.03;
-
-            noiseNode.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            noiseNode.start();
-            audioStarted = true;
-        } catch(e){}
-    }
-
+    // 按键监听与指令处理
     cmdInput.addEventListener('keydown', (e) => {
+        initAudio();
+        playKeySound();
+
         if (e.key === 'Enter') {
-            initAudio();
             const val = cmdInput.value.trim();
             cmdInput.value = '';
             if (!val) return;
 
-            printLog(`&gt; ${val}`);
-            const parts = val.toLowerCase().split(' ');
-            const cmd = parts[0];
+            print(`guest@node-01:~$ ${val}`);
+            const parts = val.split(' ');
+            const cmd = parts[0].toLowerCase();
             const param = parts[1];
 
-            if (cmd === 'help') {
-                printLog(`[CONTROL COMMANDS]:<br>
-  • <b>tune [kHz]</b> - 搜索指定频段 (例: tune 4625)<br>
-  • <b>auth [code]</b> - 提交节点授权码 (例: auth 8912)<br>
-  • <b>clear</b> - 清屏`);
-            } 
-            else if (cmd === 'clear') {
-                logBox.innerHTML = '';
-            } 
-            else if (cmd === 'tune') {
-                if (!param) {
-                    printLog(`[ERR] 请指定频率。示例: tune 4625`, '#ff4444');
-                    return;
-                }
-                if (param === '4625') {
-                    isSignalLocked = true;
-                    statusIndicator.innerText = "SIGNAL LOCKED // 4625 kHz";
-                    statusIndicator.style.color = "#ffaa00";
-                    printLog(`[LOCK 4625.0 kHz] 拦截到电台语音循环广播：`, '#ffaa00');
-                    printLog(`&gt; "ANVB 8912 - REPEAT 8912"`);
-                    if (gainNode) gainNode.gain.value = 0.01;
+            // 阶段 1：启动系统
+            if (cmd === 'boot') {
+                playHDDSound();
+                stage = 1;
+                statusInd.innerText = "SYSTEM ACTIVE";
+                statusInd.style.color = "var(--green)";
+                screenGlow.style.background = "rgba(0, 255, 102, 0.12)";
+                
+                print(`[BOOTING] 正在装载天线驱动程序...`, 'var(--green)');
+                setTimeout(() => {
+                    print(`[BOOT OK] 主板已就绪。可用指令：<br>
+  • <b>ls</b> - 查看本地日志与备忘录<br>
+  • <b>cat [文件名]</b> - 读取文件文本<br>
+  • <b>tune [kHz]</b> - 切换接收频道<br>
+  • <b>auth [代码]</b> - 提交授权码登录二层`);
+                }, 800);
+            }
+            else if (stage === 0) {
+                print(`[ERR] 系统未初始化。请先输入 <b>boot</b> 启动。`, 'var(--red)');
+            }
+            // 阶段 2：文件读取
+            else if (cmd === 'ls') {
+                playHDDSound();
+                print(`- readme_1999.log (设备备忘录)<br>- system_diag.sys (诊断数据)`);
+            }
+            else if (cmd === 'cat') {
+                playHDDSound();
+                if (param === 'readme_1999.log') {
+                    print(`【1999-08-20 留言】<br>主信号源已锁定在 UVB-76 目标频段：<b style="color:#ffaa00">4625 kHz</b>。<br>请输入 <b>tune 4625</b> 捕捉蜂鸣信号脉冲。`);
+                } else if (param === 'system_diag.sys') {
+                    print(`硬件正常。天线增益 +12dB。频段准备就绪。`);
                 } else {
-                    isSignalLocked = false;
-                    statusIndicator.innerText = "NO SIGNAL";
-                    statusIndicator.style.color = "#00ff66";
-                    printLog(`[TUNE ${param} kHz] 杂音干扰... 未发现有效载波。`);
-                    if (gainNode) gainNode.gain.value = 0.04;
+                    print(`用法: cat readme_1999.log`, 'var(--red)');
                 }
-            } 
+            }
+            // 阶段 3：调频与信号捕获
+            else if (cmd === 'tune') {
+                if (param === '4625') {
+                    stage = 2;
+                    statusInd.innerText = "SIGNAL LOCKED // 4625 kHz";
+                    statusInd.style.color = "var(--amber)";
+                    if (noiseGain) noiseGain.gain.value = 0.005;
+                    print(`[SIGNAL LOCKED] 成功捕捉 4625 kHz 蜂鸣广播！`, 'var(--amber)');
+                    print(`[DECODER] 示波器屏正解调出视觉密钥，请输入：<b>auth 8912</b>`);
+                } else {
+                    if (noiseGain) noiseGain.gain.value = 0.03;
+                    print(`[TUNE ${param || ''}] 沙沙沙... 未发现载波信号。(查看 cat readme_1999.log)`);
+                }
+            }
+            // 阶段 4：通关
             else if (cmd === 'auth') {
                 if (param === '8912') {
-                    printLog(`[AUTH SUCCESS] 凭证正确。正在进入 Stage 2...`, '#00ff66');
+                    print(`[AUTH SUCCESS] 凭证正确！解锁 Stage 2 解调终端...`, 'var(--green)');
                     setTimeout(() => {
                         window.location.href = 'stage2.html';
-                    }, 1200);
+                    }, 1500);
                 } else {
-                    printLog(`[AUTH FAILED] 授权码无效。`, '#ff4444');
+                    print(`[AUTH FAILED] 识别码错误。请观察屏幕上方示波器显像。`, 'var(--red)');
                 }
-            } 
-            else {
-                printLog(`未知指令: ${cmd}。输入 'help' 查看指令集。`, '#ff4444');
             }
+            else if (cmd === 'clear') { logBox.innerHTML = ''; }
+            else { print(`未知命令: ${cmd}。输入 'help' 查看常用命令。`, 'var(--red)'); }
         }
     });
 
