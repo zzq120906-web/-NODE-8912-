@@ -97,7 +97,8 @@
 
         <div class="terminal-log" id="logBox">
 [电源管理] 应急电池接通。主板供电恢复正常。<br>
-[系统提示] 输入 <span class="highlight-cn">boot</span> 初始化终端系统，或输入 <span class="highlight-cn">help</span> 查看指令集...<br>
+[音频模块] 提示：点击屏幕任意位置激活音频引擎。<br>
+[系统提示] 输入 <span class="highlight-cn">boot</span> 初始化系统，或输入 <span class="highlight-cn">help</span> 查看指令集...<br>
 ----------------------------------------------------------------------
         </div>
 
@@ -118,43 +119,62 @@
 
     let sysState = 0; 
     let filterActive = false;
-    let audioCtx = null, noiseGain = null;
+    let audioCtx = null, noiseNode = null, noiseGain = null;
 
     function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
     window.addEventListener('resize', resize);
     resize();
 
+    // 完整的 AudioContext 音频引擎（含白噪声与音效）
     function initAudio() {
         if (audioCtx) return;
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
-            const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+            
+            // 创建无线电连续白噪声
+            const bufSize = audioCtx.sampleRate * 2;
+            const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
             const data = buf.getChannelData(0);
-            for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+            for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
 
-            const noiseNode = audioCtx.createBufferSource();
+            noiseNode = audioCtx.createBufferSource();
             noiseNode.buffer = buf; noiseNode.loop = true;
             noiseGain = audioCtx.createGain();
-            noiseGain.gain.value = 0.005;
+            noiseGain.gain.value = 0.003; // 初始极微弱背景声
             noiseNode.connect(noiseGain);
             noiseGain.connect(audioCtx.destination);
             noiseNode.start();
         } catch(e){}
     }
 
+    // 按键敲击声
     function playKeySound() {
         if (!audioCtx) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(140 + Math.random() * 60, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.012, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.04);
+        osc.frequency.setValueAtTime(120 + Math.random() * 80, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
         osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
     }
 
+    // 蜂鸣反馈声（提示/报错/通关）
+    function playBeep(freq, duration, type='sine') {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // 动态绘制示波器频谱波形
     function renderSpectrum() {
         ctx.fillStyle = "rgba(1, 5, 2, 0.22)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -179,8 +199,8 @@
         for (let i = 0; i < 90; i++) {
             let amp = 2;
             if (sysState === 1) amp = Math.random() * 4;
-            else if (sysState === 2) amp = Math.random() * 10 + 2;
-            else if (sysState === 3) amp = Math.random() * 35 + 5;
+            else if (sysState === 2) amp = Math.random() * 12 + 2;
+            else if (sysState === 3) amp = Math.random() * 38 + 6;
             else if (sysState === 4) {
                 if (i > 32 && i < 58) amp = Math.sin((i - 32) * 0.25) * 38 + Math.random() * 4;
                 else amp = Math.random() * 6;
@@ -191,8 +211,9 @@
         }
         ctx.stroke();
 
+        // 成功解调后屏显渲染
         if (sysState === 4) {
-            ctx.font = "bold 18px 'Microsoft YaHei', sans-serif";
+            ctx.font = "bold 17px 'Microsoft YaHei', sans-serif";
             ctx.fillStyle = "#ffaa00"; ctx.shadowBlur = 12; ctx.shadowColor = "#ffaa00";
             ctx.fillText("【信号解调成功】 授权密钥：8912", canvas.width / 2 - 150, canvas.height / 2 + 6);
         }
@@ -226,24 +247,31 @@
             if (cmd === 'boot') {
                 if (sysState >= 1) return print(`[提示] 系统已经处于运行状态。`, 'warn-cn');
                 sysState = 1;
+                if(noiseGain) noiseGain.gain.value = 0.008; // 增加背景噪声感
                 statusInd.innerText = "系统已启动 (天线离线)"; statusInd.className = "warn-cn";
                 screenGlow.style.background = "rgba(0, 255, 102, 0.1)";
+                playBeep(440, 0.15);
                 print(`[系统加载] 核心模块装载完毕...`, 'success-cn');
                 setTimeout(() => { print(`[警告] 外部天线未响应。请输入 <span class="highlight-cn">cat 硬件日志.log</span> 排查故障。`); }, 500);
             }
-            else if (sysState === 0 && cmd !== 'help') { print(`[错误] 请先输入 <span class="highlight-cn">boot</span> 初始化系统。`, 'danger-cn'); }
+            else if (sysState === 0 && cmd !== 'help') {
+                playBeep(200, 0.2, 'sawtooth');
+                print(`[错误] 请先输入 <span class="highlight-cn">boot</span> 初始化系统。`, 'danger-cn'); 
+            }
             else if (cmd === 'ls') { print(`- 硬件日志.log<br>- 广播日志_1999.txt`); }
             else if (cmd === 'cat') {
-                if (param === '硬件日志.log' || param === '硬件日志') print(`【硬件诊断】天线处于离线状态。请输入 <span class="highlight-cn">enable-antenna</span> 激活天线。`, 'warn-cn');
-                else if (param === '广播日志_1999.txt' || param === '广播日志_1999') {
+                if (param === '硬件日志.log' || param === '硬件日志') {
+                    print(`【硬件诊断】天线处于离线状态。请输入 <span class="highlight-cn">enable-antenna</span> 激活天线。`, 'warn-cn');
+                } else if (param === '广播日志_1999.txt' || param === '广播日志_1999') {
                     print(`【历史记录】未标注短波频段：<br>“目标为强干扰蜂鸣台频段，频率为 4000 kHz 叠加 625 kHz...”<br>提示：若调频后杂音过大，需开启数字滤波。`, 'warn-cn');
-                }
-                else print(`用法：cat [文件名] （可用 ls 查看文件列表）`, 'danger-cn');
+                } else print(`用法：cat [文件名] （可用 ls 查看文件列表）`, 'danger-cn');
             }
             else if (cmd === 'enable-antenna') {
                 if (sysState >= 2) return print(`[提示] 天线已在激活状态。`, 'warn-cn');
                 sysState = 2;
+                if(noiseGain) noiseGain.gain.value = 0.015; // 天线启动，白噪声变大
                 statusInd.innerText = "天线已激活 // 等待调频"; statusInd.className = "success-cn";
+                playBeep(600, 0.2);
                 print(`[硬件响应] 天线阵列已强行启动。请使用指令 <span class="highlight-cn">tune [频率]</span> 进行调频解调。`, 'success-cn');
             }
             else if (cmd === 'tune') {
@@ -251,28 +279,42 @@
                 if (param === '4625') {
                     if (filterActive) {
                         sysState = 4; statusInd.innerText = "信号锁定 // 4625 kHz"; statusInd.className = "warn-cn";
+                        if(noiseGain) noiseGain.gain.value = 0.003; // 降噪
+                        playBeep(880, 0.3);
                         print(`[信号锁定] 观察上方示波器屏显浮现的授权密钥！`, 'success-cn');
                     } else {
                         sysState = 3; statusInd.innerText = "检测到信号 (重度干扰)"; statusInd.className = "danger-cn";
-                        print(`[警告] 目标频段干扰强过大，波形混淆！请输入 <span class="highlight-cn">filter on</span> 开启滤波！`, 'warn-cn');
+                        if(noiseGain) noiseGain.gain.value = 0.035; // 强干扰大噪音
+                        playBeep(300, 0.4, 'sawtooth');
+                        print(`[警告] 目标频段干扰过大，波形混淆！请输入 <span class="highlight-cn">filter on</span> 开启滤波！`, 'warn-cn');
                     }
-                } else print(`[TUNE ${param || '未知'}] 只有一片白噪声... (提示：查阅 广播日志_1999.txt 寻找频段信息)`);
+                } else {
+                    playBeep(180, 0.2);
+                    print(`[TUNE ${param || '未知'}] 只有一片白噪声... (提示：查阅 广播日志_1999.txt 寻找频段信息)`);
+                }
             }
             else if (cmd === 'filter') {
                 if (param === 'on') {
                     filterActive = true;
+                    playBeep(520, 0.15);
                     print(`[滤波电路] 硬件降噪模块已开启。`, 'success-cn');
                     if (sysState === 3) {
                         sysState = 4; statusInd.innerText = "信号锁定 // 4625 kHz"; statusInd.className = "warn-cn";
+                        if(noiseGain) noiseGain.gain.value = 0.003; // 降噪成功
+                        playBeep(880, 0.3);
                         print(`[信号解调完成] 观察上方示波器屏显高亮浮现的授权密钥！`, 'success-cn');
                     }
                 } else print(`用法：filter on`, 'danger-cn');
             }
             else if (cmd === 'auth') {
                 if (param === '8912') {
+                    playBeep(1000, 0.5);
                     print(`[授权成功] 身份验证通过！正在接入第二层核心数据网络...`, 'success-cn');
                     setTimeout(() => { window.location.href = 'stage2.html'; }, 1200);
-                } else print(`[授权失败] 密钥错误！解调成功后密钥会显现在上方示波器屏幕上。`, 'danger-cn');
+                } else {
+                    playBeep(150, 0.3, 'sawtooth');
+                    print(`[授权失败] 密钥错误！解调成功后密钥会显现在上方示波器屏幕上。`, 'danger-cn');
+                }
             }
             else if (cmd === 'help') {
                 print(`【系统操作指令指南】:<br>
@@ -286,10 +328,17 @@
 • <span class="highlight-cn">clear</span> - 清屏`);
             }
             else if (cmd === 'clear') { logBox.innerHTML = ''; }
-            else print(`未识别指令: ${cmd}。输入 <span class="highlight-cn">help</span> 查看帮助手册。`, 'danger-cn');
+            else {
+                playBeep(200, 0.1, 'sawtooth');
+                print(`未识别指令: ${cmd}。输入 <span class="highlight-cn">help</span> 查看帮助手册。`, 'danger-cn');
+            }
         }
     });
-    document.addEventListener('click', () => cmdInput.focus());
+
+    document.addEventListener('click', () => {
+        initAudio();
+        cmdInput.focus();
+    });
 </script>
 
 </body>
