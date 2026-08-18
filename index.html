@@ -9,105 +9,69 @@
             --green: #00ff66;
             --amber: #ffaa00;
             --red: #ff3333;
-            --cyan: #00e5ff;
             --dim-green: rgba(0, 255, 102, 0.2);
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-
         body, html {
-            width: 100%; height: 100%;
-            background: #000;
-            font-family: 'Courier New', 'Microsoft YaHei', sans-serif;
-            overflow: hidden;
+            width: 100%; height: 100%; background: #000;
+            font-family: 'Courier New', 'Microsoft YaHei', sans-serif; overflow: hidden;
         }
-
         .viewport {
-            position: relative;
-            width: 100vw; height: 100vh;
+            position: relative; width: 100vw; height: 100vh;
             background: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat;
-            display: flex; justify-content: center; align-items: center;
-            filter: contrast(1.15) brightness(0.8);
+            display: flex; justify-content: center; align-items: center; filter: contrast(1.15) brightness(0.8);
         }
-
         .ambient-vignette {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle, rgba(0,0,0,0.2) 20%, rgba(0,0,0,0.95) 100%);
             pointer-events: none; z-index: 1;
         }
-
         .screen-glow {
             position: absolute; width: 700px; height: 480px;
-            background: rgba(0, 255, 102, 0.03);
-            border-radius: 50%; filter: blur(100px);
-            pointer-events: none; z-index: 2;
-            transition: background 1s ease;
+            background: rgba(0, 255, 102, 0.03); border-radius: 50%; filter: blur(100px);
+            pointer-events: none; z-index: 2; transition: background 1s ease;
         }
-
         .crt-frame {
-            position: relative; z-index: 10;
-            width: 94%; max-width: 760px;
-            background: rgba(4, 10, 6, 0.95);
-            border: 2px solid var(--dim-green);
+            position: relative; z-index: 10; width: 94%; max-width: 760px;
+            background: rgba(4, 10, 6, 0.95); border: 2px solid var(--dim-green);
             border-radius: 12px; padding: 22px;
             box-shadow: 0 0 60px rgba(0, 0, 0, 0.95), inset 0 0 20px rgba(0, 255, 102, 0.08);
             backdrop-filter: blur(6px);
         }
-
         .crt-frame::after {
-            content: " "; position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
+            content: " "; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%);
             background-size: 100% 4px; pointer-events: none; border-radius: 10px;
         }
-
         .screen-header {
             display: flex; justify-content: space-between; align-items: center;
-            color: var(--green); font-size: 12px;
-            border-bottom: 1px solid var(--dim-green);
-            padding-bottom: 8px; margin-bottom: 12px;
-            letter-spacing: 1px; text-shadow: 0 0 4px var(--green);
+            color: var(--green); font-size: 12px; border-bottom: 1px solid var(--dim-green);
+            padding-bottom: 8px; margin-bottom: 12px; letter-spacing: 1px; text-shadow: 0 0 4px var(--green);
         }
-
         .header-tags span {
-            background: rgba(0, 255, 102, 0.1);
-            padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px;
+            background: rgba(0, 255, 102, 0.1); padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px;
         }
-
         #spectrumCanvas {
-            width: 100%; height: 125px;
-            background: #010502;
-            border: 1px solid var(--dim-green);
-            margin-bottom: 12px; display: block;
-            border-radius: 4px;
+            width: 100%; height: 125px; background: #010502;
+            border: 1px solid var(--dim-green); margin-bottom: 12px; display: block; border-radius: 4px;
         }
-
         .terminal-log {
-            height: 170px; overflow-y: auto;
-            color: var(--green); font-size: 13px; line-height: 1.6;
-            word-break: break-all; margin-bottom: 12px;
-            text-shadow: 0 0 4px rgba(0, 255, 102, 0.3);
-            user-select: text;
-            padding-right: 5px;
+            height: 170px; overflow-y: auto; color: var(--green); font-size: 13px; line-height: 1.6;
+            word-break: break-all; margin-bottom: 12px; text-shadow: 0 0 4px rgba(0, 255, 102, 0.3);
+            user-select: text; padding-right: 5px;
         }
-
         .terminal-log::-webkit-scrollbar { width: 4px; }
         .terminal-log::-webkit-scrollbar-thumb { background: var(--dim-green); border-radius: 2px; }
-
         .command-bar {
-            display: flex; align-items: center;
-            background: rgba(0, 0, 0, 0.85);
-            border: 1px solid var(--dim-green);
-            padding: 10px 12px; border-radius: 4px;
+            display: flex; align-items: center; background: rgba(0, 0, 0, 0.85);
+            border: 1px solid var(--dim-green); padding: 10px 12px; border-radius: 4px;
         }
-
         .prompt { color: var(--green); margin-right: 10px; font-size: 13px; font-weight: bold; }
         .cmd-input {
             background: transparent; border: none; outline: none;
             color: #fff; font-family: inherit; font-size: 13px; flex: 1;
             text-shadow: 0 0 6px var(--green); user-select: text;
         }
-
         .highlight-cn { color: #fff; font-weight: bold; background: rgba(255,255,255,0.15); padding: 0 4px; border-radius: 2px; }
         .warn-cn { color: var(--amber); font-weight: bold; }
         .success-cn { color: var(--green); font-weight: bold; }
@@ -133,7 +97,7 @@
 
         <div class="terminal-log" id="logBox">
 [电源管理] 应急电池接通。主板供电恢复正常。<br>
-[系统提示] 输入 <span class="highlight-cn">boot</span> 初始化终端系统，或按键盘任意键激活音频组件...<br>
+[系统提示] 输入 <span class="highlight-cn">boot</span> 初始化终端系统，或输入 <span class="highlight-cn">help</span> 查看指令集...<br>
 ----------------------------------------------------------------------
         </div>
 
@@ -165,17 +129,14 @@
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
-
             const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
             const data = buf.getChannelData(0);
             for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
 
             const noiseNode = audioCtx.createBufferSource();
             noiseNode.buffer = buf; noiseNode.loop = true;
-
             noiseGain = audioCtx.createGain();
             noiseGain.gain.value = 0.005;
-
             noiseNode.connect(noiseGain);
             noiseGain.connect(audioCtx.destination);
             noiseNode.start();
@@ -194,26 +155,9 @@
         osc.start(); osc.stop(audioCtx.currentTime + 0.04);
     }
 
-    function playRelaySound() {
-        if (!audioCtx) return;
-        for (let i = 0; i < 3; i++) {
-            setTimeout(() => {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(600 + Math.random() * 300, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.025, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
-            }, i * 80);
-        }
-    }
-
     function renderSpectrum() {
         ctx.fillStyle = "rgba(1, 5, 2, 0.22)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
         ctx.strokeStyle = "rgba(0, 255, 102, 0.08)";
         ctx.lineWidth = 1;
         for (let x = 0; x < canvas.width; x += 30) {
@@ -222,36 +166,25 @@
 
         ctx.beginPath();
         ctx.lineWidth = 1.5;
-        
         if (sysState === 4) {
-            ctx.strokeStyle = "#ffaa00";
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = "#ffaa00";
+            ctx.strokeStyle = "#ffaa00"; ctx.shadowBlur = 10; ctx.shadowColor = "#ffaa00";
         } else if (sysState >= 2) {
-            ctx.strokeStyle = "#00ff66";
-            ctx.shadowBlur = 4;
-            ctx.shadowColor = "#00ff66";
+            ctx.strokeStyle = "#00ff66"; ctx.shadowBlur = 4; ctx.shadowColor = "#00ff66";
         } else {
-            ctx.strokeStyle = "rgba(0, 255, 102, 0.2)";
-            ctx.shadowBlur = 0;
+            ctx.strokeStyle = "rgba(0, 255, 102, 0.2)"; ctx.shadowBlur = 0;
         }
 
         const slice = canvas.width / 90;
         let x = 0;
-
         for (let i = 0; i < 90; i++) {
             let amp = 2;
             if (sysState === 1) amp = Math.random() * 4;
             else if (sysState === 2) amp = Math.random() * 10 + 2;
             else if (sysState === 3) amp = Math.random() * 35 + 5;
             else if (sysState === 4) {
-                if (i > 32 && i < 58) {
-                    amp = Math.sin((i - 32) * 0.25) * 38 + Math.random() * 4;
-                } else {
-                    amp = Math.random() * 6;
-                }
+                if (i > 32 && i < 58) amp = Math.sin((i - 32) * 0.25) * 38 + Math.random() * 4;
+                else amp = Math.random() * 6;
             }
-
             let y = canvas.height / 2 + (Math.random() > 0.5 ? amp : -amp);
             if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             x += slice;
@@ -260,10 +193,8 @@
 
         if (sysState === 4) {
             ctx.font = "bold 18px 'Microsoft YaHei', sans-serif";
-            ctx.fillStyle = "#ffaa00";
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = "#ffaa00";
-            ctx.fillText("【信号解调成功】 授权验证码：8912", canvas.width / 2 - 150, canvas.height / 2 + 6);
+            ctx.fillStyle = "#ffaa00"; ctx.shadowBlur = 12; ctx.shadowColor = "#ffaa00";
+            ctx.fillText("【信号解调成功】 授权密钥：8912", canvas.width / 2 - 150, canvas.height / 2 + 6);
         }
 
         requestAnimationFrame(renderSpectrum);
@@ -293,128 +224,73 @@
             const param = parts[1] ? parts[1].toLowerCase() : '';
 
             if (cmd === 'boot') {
-                if (sysState >= 1) {
-                    print(`[提示] 系统已经处于运行状态。`, 'warn-cn');
-                    return;
-                }
-                playRelaySound();
+                if (sysState >= 1) return print(`[提示] 系统已经处于运行状态。`, 'warn-cn');
                 sysState = 1;
-                statusInd.innerText = "系统已启动 (天线离线)";
-                statusInd.className = "warn-cn";
+                statusInd.innerText = "系统已启动 (天线离线)"; statusInd.className = "warn-cn";
                 screenGlow.style.background = "rgba(0, 255, 102, 0.1)";
-
                 print(`[系统加载] 核心模块装载完毕...`, 'success-cn');
-                setTimeout(() => {
-                    print(`[警告] 外部天线未响应。请输入 <span class="highlight-cn">cat 硬件日志.log</span> 排查故障，或输入 <span class="highlight-cn">help</span> 查看常用指令。`);
-                }, 600);
+                setTimeout(() => { print(`[警告] 外部天线未响应。请输入 <span class="highlight-cn">cat 硬件日志.log</span> 排查故障。`); }, 500);
             }
-            else if (sysState === 0) {
-                print(`[错误] 终端尚未启动。请先输入 <span class="highlight-cn">boot</span> 初始化系统。`, 'danger-cn');
-            }
-            else if (cmd === 'ls') {
-                playRelaySound();
-                print(`- 硬件日志.log （天线与模块诊断）<br>- 广播日志_1999.txt （前人留下的调频记录）`);
-            }
+            else if (sysState === 0 && cmd !== 'help') { print(`[错误] 请先输入 <span class="highlight-cn">boot</span> 初始化系统。`, 'danger-cn'); }
+            else if (cmd === 'ls') { print(`- 硬件日志.log<br>- 广播日志_1999.txt`); }
             else if (cmd === 'cat') {
-                playRelaySound();
-                if (param === '硬件日志.log' || param === '硬件日志') {
-                    print(`【硬件诊断报告】<br>天线高空阵列处于 [禁用/离线] 状态。<br>系统修复指令：请输入 <span class="highlight-cn">enable-antenna</span> 强制激活天线供电。`, 'warn-cn');
-                } else if (param === '广播日志_1999.txt' || param === '广播日志_1999') {
-                    print(`【1999年8月20日 留下的记录】<br>我们将目标频道固定在：<span class="highlight-cn">4625 kHz</span>。<br>如果听到严重的杂音干扰，记得使用滤波指令：<span class="highlight-cn">filter on</span> 开启音频滤波电路。`);
-                } else {
-                    print(`用法错误：请输入 cat 硬件日志.log 或 cat 广播日志_1999.txt`, 'danger-cn');
+                if (param === '硬件日志.log' || param === '硬件日志') print(`【硬件诊断】天线处于离线状态。请输入 <span class="highlight-cn">enable-antenna</span> 激活天线。`, 'warn-cn');
+                else if (param === '广播日志_1999.txt' || param === '广播日志_1999') {
+                    print(`【历史记录】未标注短波频段：<br>“目标为强干扰蜂鸣台频段，频率为 4000 kHz 叠加 625 kHz...”<br>提示：若调频后杂音过大，需开启数字滤波。`, 'warn-cn');
                 }
+                else print(`用法：cat [文件名] （可用 ls 查看文件列表）`, 'danger-cn');
             }
             else if (cmd === 'enable-antenna') {
-                if (sysState >= 2) {
-                    print(`[提示] 天线阵列已经处于激活状态。`, 'warn-cn');
-                    return;
-                }
-                playRelaySound();
+                if (sysState >= 2) return print(`[提示] 天线已在激活状态。`, 'warn-cn');
                 sysState = 2;
-                statusInd.innerText = "天线已激活 // 等待调频";
-                statusInd.className = "success-cn";
-                if (noiseGain) noiseGain.gain.value = 0.015;
-
-                print(`[硬件响应] 继电器吸合！天线阵列已强行高压启动。`, 'success-cn');
-                print(`[提示] 请使用调频指令 <span class="highlight-cn">tune [频率]</span> 寻找电台信号（例：tune 4625）。`);
+                statusInd.innerText = "天线已激活 // 等待调频"; statusInd.className = "success-cn";
+                print(`[硬件响应] 天线阵列已强行启动。请使用指令 <span class="highlight-cn">tune [频率]</span> 进行调频解调。`, 'success-cn');
             }
             else if (cmd === 'tune') {
-                if (sysState < 2) {
-                    print(`[错误] 天线未激活，无法接收信号！请先输入 <span class="highlight-cn">enable-antenna</span>`, 'danger-cn');
-                    return;
-                }
-
+                if (sysState < 2) return print(`[错误] 天线未激活，无法调频！请先输入 <span class="highlight-cn">enable-antenna</span>。`, 'danger-cn');
                 if (param === '4625') {
                     if (filterActive) {
-                        sysState = 4;
-                        statusInd.innerText = "信号锁定 // 4625 kHz";
-                        statusInd.className = "warn-cn";
-                        if (noiseGain) noiseGain.gain.value = 0.003;
-                        print(`[信号成功锁定] 已消除杂波！请观察上方示波器屏显浮现的验证码！`, 'success-cn');
+                        sysState = 4; statusInd.innerText = "信号锁定 // 4625 kHz"; statusInd.className = "warn-cn";
+                        print(`[信号锁定] 观察上方示波器屏显浮现的授权密钥！`, 'success-cn');
                     } else {
-                        sysState = 3;
-                        statusInd.innerText = "检测到信号 (重度干扰)";
-                        statusInd.className = "danger-cn";
-                        if (noiseGain) noiseGain.gain.value = 0.04;
-                        print(`[警告] 已捕捉到 4625 kHz 载波，但电磁干扰过强！波形剧烈扭曲！`, 'danger-cn');
-                        print(`[提示] 请输入 <span class="highlight-cn">filter on</span> 开启音频降噪滤波电路！`, 'warn-cn');
+                        sysState = 3; statusInd.innerText = "检测到信号 (重度干扰)"; statusInd.className = "danger-cn";
+                        print(`[警告] 目标频段干扰强过大，波形混淆！请输入 <span class="highlight-cn">filter on</span> 开启滤波！`, 'warn-cn');
                     }
-                } else {
-                    sysState = 2;
-                    statusInd.innerText = "天线已激活 // 无信号";
-                    statusInd.className = "success-cn";
-                    if (noiseGain) noiseGain.gain.value = 0.02;
-                    print(`[TUNE ${param || ''}] 只有一片死寂的白噪音... (请阅读 cat 广播日志_1999.txt)`);
-                }
+                } else print(`[TUNE ${param || '未知'}] 只有一片白噪声... (提示：查阅 广播日志_1999.txt 寻找频段信息)`);
             }
             else if (cmd === 'filter') {
                 if (param === 'on') {
                     filterActive = true;
-                    playRelaySound();
-                    print(`[滤波电路] 硬件音频降噪已开启。`, 'success-cn');
-                    
+                    print(`[滤波电路] 硬件降噪模块已开启。`, 'success-cn');
                     if (sysState === 3) {
-                        sysState = 4;
-                        statusInd.innerText = "信号锁定 // 4625 kHz";
-                        statusInd.className = "warn-cn";
-                        if (noiseGain) noiseGain.gain.value = 0.003;
-                        print(`[信号解调完成] 杂波已清除！示波器正高亮显示解调结果！`, 'success-cn');
+                        sysState = 4; statusInd.innerText = "信号锁定 // 4625 kHz"; statusInd.className = "warn-cn";
+                        print(`[信号解调完成] 观察上方示波器屏显高亮浮现的授权密钥！`, 'success-cn');
                     }
-                } else {
-                    print(`用法：输入 <span class="highlight-cn">filter on</span> 开启滤波`, 'danger-cn');
-                }
+                } else print(`用法：filter on`, 'danger-cn');
             }
             else if (cmd === 'auth') {
                 if (param === '8912') {
-                    playRelaySound();
-                    print(`[授权成功] 身份验证通过！正在接入第二关控制台...`, 'success-cn');
-                    document.body.style.boxShadow = "inset 0 0 100px #00ff66";
-                    setTimeout(() => {
-                        window.location.href = 'stage2.html';
-                    }, 1400);
-                } else {
-                    print(`[授权失败] 识别码不正确。正确代码已高亮显示在上方示波器屏幕上。`, 'danger-cn');
-                }
+                    print(`[授权成功] 身份验证通过！正在接入第二层核心数据网络...`, 'success-cn');
+                    setTimeout(() => { window.location.href = 'stage2.html'; }, 1200);
+                } else print(`[授权失败] 密钥错误！解调成功后密钥会显现在上方示波器屏幕上。`, 'danger-cn');
             }
             else if (cmd === 'help') {
-                print(`【可用系统指令列表】:<br>
-  • <span class="highlight-cn">ls</span> - 列出当前目录下的日志文件<br>
-  • <span class="highlight-cn">cat [文件名]</span> - 查看文件中的中文详细说明<br>
-  • <span class="highlight-cn">enable-antenna</span> - 强制激活外部天线供电<br>
-  • <span class="highlight-cn">tune [频率]</span> - 调频接收（例：tune 4625）<br>
-  • <span class="highlight-cn">filter on</span> - 开启音频滤波电路降噪<br>
-  • <span class="highlight-cn">auth [代码]</span> - 提交通关验证码（例：auth 8912）<br>
-  • <span class="highlight-cn">clear</span> - 清理屏幕`);
+                print(`【系统操作指令指南】:<br>
+• <span class="highlight-cn">boot</span> - 初始化终端系统<br>
+• <span class="highlight-cn">ls</span> - 列出当前目录下文件<br>
+• <span class="highlight-cn">cat [文件名]</span> - 查看文件内容<br>
+• <span class="highlight-cn">enable-antenna</span> - 强行激活天线阵列<br>
+• <span class="highlight-cn">tune [频率]</span> - 调谐接收指定 kHz 频段<br>
+• <span class="highlight-cn">filter on</span> - 开启数字滤波降噪<br>
+• <span class="highlight-cn">auth [密钥]</span> - 提交通关密钥认证<br>
+• <span class="highlight-cn">clear</span> - 清屏`);
             }
             else if (cmd === 'clear') { logBox.innerHTML = ''; }
-            else { print(`未识别的指令: ${cmd}。输入 <span class="highlight-cn">help</span> 获取帮助。`, 'danger-cn'); }
+            else print(`未识别指令: ${cmd}。输入 <span class="highlight-cn">help</span> 查看帮助手册。`, 'danger-cn');
         }
     });
-
     document.addEventListener('click', () => cmdInput.focus());
 </script>
 
 </body>
 </html>
-
