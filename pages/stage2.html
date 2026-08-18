@@ -22,7 +22,6 @@
             overflow: hidden;
         }
 
-        /* 沉浸式蓝紫色环境 */
         .viewport {
             position: relative;
             width: 100vw; height: 100vh;
@@ -44,7 +43,6 @@
             pointer-events: none; z-index: 2;
         }
 
-        /* 终端框架 */
         .crt-frame {
             position: relative; z-index: 10;
             width: 94%; max-width: 780px;
@@ -75,7 +73,6 @@
             padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px; color: #fff;
         }
 
-        /* 频谱瀑布图 Canvas */
         #waterfallCanvas {
             width: 100%; height: 140px;
             background: #010308;
@@ -84,7 +81,6 @@
             border-radius: 4px;
         }
 
-        /* 日志输出区 */
         .terminal-log {
             height: 180px; overflow-y: auto;
             color: var(--cyan); font-size: 13px; line-height: 1.6;
@@ -97,7 +93,6 @@
         .terminal-log::-webkit-scrollbar { width: 4px; }
         .terminal-log::-webkit-scrollbar-thumb { background: var(--dim-cyan); border-radius: 2px; }
 
-        /* 输入框 */
         .command-bar {
             display: flex; align-items: center;
             background: rgba(0, 0, 0, 0.85);
@@ -156,7 +151,6 @@
     const cmdInput = document.getElementById('cmdInput');
     const statusInd = document.getElementById('statusInd');
 
-    // 收集的碎片状态
     let fragments = { f1: false, f2: false, f3: false };
     let audioCtx = null;
 
@@ -164,7 +158,6 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // 🔊 视听音效系统
     function initAudio() {
         if (audioCtx) return;
         try {
@@ -198,17 +191,14 @@
         osc.start(); osc.stop(audioCtx.currentTime + 0.3);
     }
 
-    // 🌊 SDR 动态瀑布流效果生成
     const waterfallRows = [];
     const maxRows = 70;
 
     function renderWaterfall() {
-        // 生成一行新数据
         const row = new Uint8Array(80);
         for (let i = 0; i < 80; i++) {
-            row[i] = Math.random() * 40; // 底噪
+            row[i] = Math.random() * 40;
         }
-        // 三个特意高亮的载波信号（位于 20, 40, 65 位置）
         row[20] = 200 + Math.random() * 55;
         row[40] = 220 + Math.random() * 35;
         row[65] = 240 + Math.random() * 15;
@@ -216,7 +206,6 @@
         waterfallRows.unshift(row);
         if (waterfallRows.length > maxRows) waterfallRows.pop();
 
-        // 渲染到 Canvas
         ctx.fillStyle = "#010308";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -228,7 +217,7 @@
             for (let c = 0; c < 80; c++) {
                 const val = currentRow[c];
                 if (val > 150) {
-                    ctx.fillStyle = val > 220 ? "#ffaa00" : "#00f3ff"; // 高亮颜色
+                    ctx.fillStyle = val > 220 ? "#ffaa00" : "#00f3ff";
                 } else {
                     ctx.fillStyle = `rgba(0, 100, 150, ${val / 150 * 0.3})`;
                 }
@@ -236,7 +225,6 @@
             }
         }
 
-        // 绘制刻度线
         ctx.fillStyle = "rgba(0, 243, 255, 0.7)";
         ctx.font = "10px monospace";
         ctx.fillText("1024 kHz", canvas.width * (20/80) - 20, 12);
@@ -255,7 +243,6 @@
         logBox.scrollTop = logBox.scrollHeight;
     }
 
-    // 交互逻辑
     cmdInput.addEventListener('keydown', (e) => {
         initAudio();
         playKeySound();
@@ -270,7 +257,6 @@
             const cmd = parts[0].toLowerCase();
             const param = parts[1] ? parts[1].toUpperCase() : '';
 
-            // 1. 全频段扫描
             if (cmd === 'scan') {
                 playScanSound();
                 print(`[FFT 宽带扫描中...] 正在检测全频段能量分布...`, 'success-cn');
@@ -282,7 +268,6 @@
   请使用 <span class="highlight-cn">tune [频率]</span> 分别提取秘钥碎片。`, 'warn-cn');
                 }, 500);
             }
-            // 2. 调频提取碎片
             else if (cmd === 'tune') {
                 if (param === '1024') {
                     fragments.f1 = true;
@@ -297,12 +282,10 @@
                     print(`[TUNE ${param}] 目标频段无有效载波，请检查瀑布图上的高亮频段（输入 scan 查看）。`, 'danger-cn');
                 }
 
-                // 进度检查
                 if (fragments.f1 && fragments.f2 && fragments.f3) {
                     print(`[系统提示] 3 个数据碎片已全部分离！请输入 <span class="highlight-cn">cat 组合规则.txt</span> 查看合成公式。`, 'warn-cn');
                 }
             }
-            // 3. 查看组合规则
             else if (cmd === 'ls') {
                 print(`- 组合规则.txt （秘钥拼装说明）`);
             }
@@ -313,20 +296,18 @@
                     print(`用法：cat 组合规则.txt`, 'danger-cn');
                 }
             }
-            // 4. 提交通关
             else if (cmd === 'submit') {
                 if (param === 'ECHO-PROTOCOL-2026') {
                     print(`[校验成功] 秘钥正确！第二层数据链路已完全解密通关！`, 'success-cn');
                     statusInd.innerText = "STAGE 2 CLEARED";
                     statusInd.className = "warn-cn";
                     setTimeout(() => {
-                        alert("🎉 恭喜通关 SDR 无线电解密第二关！后续更震撼关卡持续开启！");
+                        alert("🎉 恭喜通关 SDR 无线电解密第二关！");
                     }, 1000);
                 } else {
                     print(`[校验失败] 秘钥格式错误。格式示例：ECHO-PROTOCOL-2026`, 'danger-cn');
                 }
             }
-            // 常用帮助
             else if (cmd === 'help') {
                 print(`【第二关帮助指令】:<br>
   • <span class="highlight-cn">scan</span> - 扫描全频段高亮信号<br>
