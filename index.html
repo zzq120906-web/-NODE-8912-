@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WebSDR // 短波节点 - NODE_8912</title>
+    <style>
+        :root {
+            --amber: #ffb000;
+            --amber-glow: rgba(255, 176, 0, 0.4);
+            --amber-dim: #5c4100;
+            --bg-dark: #070709;
+            --panel-bg: #111216;
+            --crt-bg: #030402;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 防止误触选中文字打断沉浸感 */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--amber);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        /* 复古机箱外壳 */
+        .radio-container {
+            background: var(--panel-bg);
+            border: 3px solid #22242b;
+            border-radius: 8px;
+            padding: 24px;
+            width: 100%;
+            max-width: 580px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--amber-dim);
+            padding-bottom: 10px;
+            margin-bottom: 18px;
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--amber-dim);
+            margin-right: 5px;
+        }
+
+        .status-dot.active {
+            background: var(--amber);
+            box-shadow: 0 0 8px var(--amber);
+        }
+
+        /* CRT 显示屏与扫描线效果 */
+        .crt-screen {
+            background: var(--crt-bg);
+            border: 2px solid var(--amber-dim);
+            border-radius: 4px;
+            padding: 15px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
+        }
+
+        /* 模拟老式 CRT 显示屏网格与扫描线 */
+        .crt-screen::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .freq-display {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .freq-num {
+            font-size: 44px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-shadow: 0 0 12px var(--amber-glow);
+        }
+
+        .freq-unit { 
+            font-size: 14px; 
+            color: var(--amber-dim); 
+        }
+
+        /* 调频滑块优化（适合手机指尖触控） */
+        .tuner-group {
+            margin: 22px 0;
+        }
+
+        .tuner-label {
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: #8a8e9b;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 38px;
+            background: #000;
+            border: 1px solid var(--amber-dim);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 36px;
+            background: var(--amber);
+            border-radius: 2px;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--amber);
+        }
+
+        /* 终端日志文本 */
+        .signal-log {
+            height: 100px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #a0a5b5;
+            overflow-y: auto;
+            word-break: break-all;
+            margin-top: 10px;
+            user-select: text;
+        }
+
+        .signal-log.active {
+            color: var(--amber);
+            text-shadow: 0 0 5px var(--amber-glow);
+        }
+
+        /* 三端响应式输入控制区 */
+        .pass-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        input[type=text] {
+            flex: 1;
+            background: #000;
+            border: 1px solid var(--amber-dim);
+            color: var(--amber);
+            padding: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            border-radius: 4px;
+            user-select: text;
+        }
+
+        input[type=text]:focus {
+            border-color: var(--amber);
+            box-shadow: 0 0 8px var(--amber-glow);
+        }
+
+        button {
+            background: var(--amber);
+            color: #000;
+            border: none;
+            padding: 12px 22px;
+            font-weight: bold;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        button:active {
+            transform: scale(0.97);
+            background: #fff;
+        }
+
+        .footer-hint {
+            font-size: 10px;
+            color: #555a66;
+            margin-top: 18px;
+            text-align: center;
+        }
+
+        /* 针对手机端（Mobile）体验适配 */
+        @media (max-width: 480px) {
+            .radio-container { padding: 16px; }
+            .freq-num { font-size: 34px; }
+            .pass-group { flex-direction: column; }
+            button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="radio-container">
+    <div class="header">
+        <span>SDR RECEIVER // MODEL-IV</span>
+        <span><span class="status-dot" id="statusDot"></span><span id="statusText">OFFLINE</span></span>
+    </div>
+
+    <!-- CRT 主屏 -->
+    <div class="crt-screen">
+        <div class="freq-display">
+            <span class="freq-num" id="freqVal">1000</span> <span class="freq-unit">kHz</span>
+        </div>
+        <div class="signal-log" id="logBox">
+            [SYSTEM] 点击屏幕任意位置启动短波接收机音轨...
+        </div>
+    </div>
+
+    <!-- 调频滑块控制区 -->
+    <div class="tuner-group">
+        <div class="tuner-label">
+            <span>调谐频段</span>
+            <span>1000 - 9999 kHz</span>
+        </div>
+        <input type="range" id="freqSlider" min="1000" max="9999" value="1000" step="1" oninput="updateFreq(this.value)">
+    </div>
+
+    <!-- 解锁交互区 -->
+    <div class="pass-group">
+        <input type="text" id="passInput" placeholder="输入解调出的密码..." autocomplete="off">
+        <button onclick="checkPass()">解调并连接</button>
+    </div>
+
+    <div class="footer-hint">
+        提示：寻找旧时代 UVB-76 (The Buzzer) 蜂鸣电台的标称频率...
+    </div>
+</div>
+
+<script>
+    let audioCtx = null;
+    let noiseNode = null;
+    let gainNode = null;
+    let audioStarted = false;
+
+    // 初始化短波白噪音音频引擎
+    function initAudio() {
+        if (audioStarted) return;
+        
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            
+            const bufferSize = audioCtx.sampleRate * 2;
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+
+            noiseNode = audioCtx.createBufferSource();
+            noiseNode.buffer = noiseBuffer;
+            noiseNode.loop = true;
+
+            gainNode = audioCtx.createGain();
+            gainNode.gain.value = 0.05;
+
+            noiseNode.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            noiseNode.start();
+            
+            audioStarted = true;
+            document.getElementById('statusDot').className = "status-dot active";
+            document.getElementById('statusText').innerText = "ONLINE";
+            document.getElementById('logBox').innerText = "[SYSTEM] 短波音频已就绪。请滑动调频轴寻找信号...";
+        } catch (e) {
+            console.log("Audio Init Warning:", e);
+        }
+    }
+
+    // 绑定触摸/点击以激活移动端音频权限
+    document.addEventListener('touchstart', initAudio, { once: true });
+    document.addEventListener('click', initAudio, { once: true });
+
+    // 调频逻辑
+    function updateFreq(val) {
+        document.getElementById('freqVal').innerText = val;
+        const logBox = document.getElementById('logBox');
+        const statusText = document.getElementById('statusText');
+
+        if (val === "4625") {
+            logBox.className = "signal-log active";
+            statusText.innerText = "SIGNAL LOCKED";
+            
+            logBox.innerHTML = `
+                [4625 kHz - 拦截到短波广播]:<br>
+                “这里是 UVB-76... 听到请回答...”<br>
+                “重复指令序列：8 - 9 - 1 - 2”<br>
+                “重复：8912... 它们在地下三层。”
+            `;
+
+            if (gainNode) gainNode.gain.value = 0.01; // 锁定信号时降低噪点
+
+        } else {
+            logBox.className = "signal-log";
+            statusText.innerText = "SEARCHING...";
+            logBox.innerText = `[${val} kHz]: 沙沙... (虚无的白噪音)`;
+            if (gainNode) gainNode.gain.value = 0.05;
+        }
+    }
+
+    // 验证逻辑
+    function checkPass() {
+        const input = document.getElementById('passInput').value.trim();
+        if (input === '8912') {
+            alert("【解调成功】：信号已匹配。正在请求连接至第二关...");
+            // window.location.href = 'stage2.html';
+        } else {
+            alert("【解调失败】：识别码无效，无法建立短波握手。");
+        }
+    }
+</script>
+
+</body>
+</html>
