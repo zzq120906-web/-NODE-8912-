@@ -356,7 +356,7 @@
                 if (noiseGain) noiseGain.gain.value = 0.015;
 
                 print(`[硬件响应] 继电器吸合！天线阵列已强行高压启动。`, 'success-cn');
-                print(`[提示] 请使用调频指令 <span class="highlight-cn">tune [频率]</span> 寻找电台信号（例：tune 4625）。`);
+                print(`[提示] 请使用调频指令 <span class="highlight-cn">tune [频率]</span> 寻找电台信号（例：tune xxxx）。`);
             }
             // 4. 调频搜寻
             else if (cmd === 'tune') {
@@ -372,7 +372,7 @@
                         statusInd.className = "warn-cn";
                         if (noiseGain) noiseGain.gain.value = 0.003;
                         print(`[信号成功锁定] 已消除杂波！请观察上方示波器屏显浮现的验证码！`, 'success-cn');
-                        print(`请输入：<span class="highlight-cn">auth 8912</span> 完成第一关验证提权。`, 'warn-cn');
+                        print(`请输入：<span class="highlight-cn">验证码</span> 完成验证：）。`, 'warn-cn');
                     } else {
                         sysState = 3;
                         statusInd.innerText = "检测到信号 (重度干扰)";
