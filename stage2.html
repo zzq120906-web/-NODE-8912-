@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SDR-NODE // 深层意识隔离区 (SECTOR-OMEGA)</title>
+    <title>SDR-NODE // 深度隔离内网 (SECTOR-OMEGA)</title>
     <style>
         :root {
             --green: #00ff66;
@@ -56,6 +56,7 @@
             border-radius: 12px; padding: 22px;
             box-shadow: 0 0 60px rgba(0, 0, 0, 0.98), inset 0 0 25px rgba(0, 255, 102, 0.06);
             backdrop-filter: blur(8px);
+            transition: border-color 1s ease;
         }
 
         /* CRT 扫描线效应 */
@@ -139,17 +140,17 @@
         <div class="screen-header">
             <div>
                 <b>地下核心沙盒 // SECTOR-OMEGA</b>
-                <span class="header-tags"><span>内网连结</span><span>状态: 异常监测</span></span>
+                <span class="header-tags"><span>内网连结</span><span>状态: 稳定</span></span>
             </div>
-            <span id="statusInd" class="warn-cn">生物电磁场锁定中</span>
+            <span id="statusInd" class="warn-cn">表面层挂载中</span>
         </div>
 
         <canvas id="spectrumCanvas"></canvas>
 
         <div class="terminal-log" id="logBox">
-[安全网关] 授权代码 8912 验证通过。已穿透 4625 频道外围防火墙。<br>
-[剧情背景] 第一关接收到的幽灵电台，实际上是这座废弃地下科研所数十年前遗留的“自动广播网”。而你现在接入的，正是当年引发失联事件的**核心本地终端**。<br>
-[系统提示] 服务器内分为公开浅层档案与高强度加密的深层禁区。输入 <span class="highlight-cn">ls</span> 开始检索……<br>
+[安全网关] 验证码 8912 握手成功。已穿透 4625 频道外围防火墙。<br>
+[剧情交接] 你顺着第一关的短波幽灵电台，成功连入了这座废弃地下所的本地终端。服务器目前处于**浅层目录**。<br>
+[系统提示] 输入 <span class="highlight-cn">ls</span> 查阅表面公开档案，寻找通往深层的线索……<br>
 ----------------------------------------------------------------------
         </div>
 
@@ -171,14 +172,13 @@
     const viewportBg = document.getElementById('viewportBg');
 
     let audioCtx = null, noiseNode = null, noiseGain = null;
-    let deepUnlocked = false; // 是否破解了深层锁
-    let calibrationDone = false; // 全新解密玩法：波形谐振校准状态
+    let accessLayer = 1; // 1: 浅层, 2: 中层(指针注入解密后), 3: 深层核心(终极覆写后)
 
     function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
     window.addEventListener('resize', resize);
     resize();
 
-    // 🔊 诡异低频与环境音效
+    // 🔊 绝对稳定的 WebAudio 合成器（环境沙沙声 + 按键音 + 恐怖警报）
     function initAudio() {
         if (audioCtx) return;
         try {
@@ -187,13 +187,13 @@
 
             const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
             const data = buf.getChannelData(0);
-            for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.25;
+            for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.2;
 
             noiseNode = audioCtx.createBufferSource();
             noiseNode.buffer = buf; noiseNode.loop = true;
 
             noiseGain = audioCtx.createGain();
-            noiseGain.gain.value = 0.005;
+            noiseGain.gain.value = 0.004;
 
             noiseNode.connect(noiseGain);
             noiseGain.connect(audioCtx.destination);
@@ -203,30 +203,50 @@
 
     function playKeySound() {
         if (!audioCtx) return;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(90 + Math.random() * 40, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.012, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+        try {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(150 + Math.random() * 80, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.04);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+        } catch(e){}
+    }
+
+    function playRelaySound() {
+        if (!audioCtx) return;
+        try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+        } catch(e){}
     }
 
     function playHorrorAlarm() {
         if (!audioCtx) return;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.6);
-        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+        try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+        } catch(e){}
     }
 
-    // 动态波形渲染
+    // 动态示波器渲染
     function renderSpectrum() {
         ctx.fillStyle = "rgba(1, 4, 1, 0.25)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -239,17 +259,17 @@
 
         ctx.beginPath();
         ctx.lineWidth = 1.6;
-        ctx.strokeStyle = deepUnlocked ? "#ff3333" : "#00ff66";
-        ctx.shadowBlur = deepUnlocked ? 10 : 4;
-        ctx.shadowColor = deepUnlocked ? "#ff3333" : "#00ff66";
+        ctx.strokeStyle = accessLayer >= 2 ? "#ff3333" : "#00ff66";
+        ctx.shadowBlur = accessLayer >= 2 ? 10 : 4;
+        ctx.shadowColor = accessLayer >= 2 ? "#ff3333" : "#00ff66";
 
         const slice = canvas.width / 90;
         let x = 0;
 
         for (let i = 0; i < 90; i++) {
             let amp = Math.random() * 6 + 2;
-            if (deepUnlocked && i > 38 && i < 52) {
-                amp = Math.sin(i * 0.5) * 40; // 恐怖心跳突波
+            if (accessLayer >= 2 && i > 38 && i < 52) {
+                amp = Math.sin(i * 0.5) * 42; // 恐怖心跳突波
             }
             let y = canvas.height / 2 + (Math.random() > 0.5 ? amp : -amp);
             if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
@@ -269,7 +289,7 @@
         logBox.scrollTop = logBox.scrollHeight;
     }
 
-    // 交互引擎
+    // 命令行交互核心
     cmdInput.addEventListener('keydown', (e) => {
         initAudio();
         playKeySound();
@@ -284,80 +304,102 @@
             const cmd = parts[0].toLowerCase();
             const param = parts[1] ? parts[1].toLowerCase() : '';
 
-            // 1. 列表查看（多份浅层档案 + 深层加密档案）
+            // 1. 动态文件列表（层层递进，绝不一开始就全部暴露）
             if (cmd === 'ls') {
-                print(`【服务器当前挂载卷宗】:<br>
-  [浅层公开] <span class="highlight-cn">station_history.txt</span> （4625 频道起源与地下所背景）<br>
-  [浅层公开] <span class="highlight-cn">staff_memo_1999.log</span> （失联前夕员工的恐慌备忘录）<br>
-  [浅层公开] <span class="highlight-cn">resonance_manual.txt</span> （硬件波形谐振校准操作手册）<br>
-  [深层加密] <span class="danger-cn">subject_zero_core.dat [LOCKED]</span> （零号实体收容记录 - 需谐振校准后访问）<br>
-  [深层加密] <span class="danger-cn">emergency_override.cfg [LOCKED]</span> （终极系统覆写配置 - 需解密）`);
+                playRelaySound();
+                if (accessLayer === 1) {
+                    print(`【浅层公开卷宗】:<br>
+  - <span class="highlight-cn">station_history.txt</span> （4625 频道起源与地下所背景）<br>
+  - <span class="highlight-cn">staff_memo_1999.log</span> （失联前夕员工留下的恐慌手记）<br>
+  - <span class="highlight-cn">kernel_debug.txt</span> （系统内核底层调试说明与内存指针提示）`);
+                } else if (accessLayer === 2) {
+                    print(`【中层隔离档案 // 已通过内存指针注入解锁】:<br>
+  - <span class="warn-cn">containment_breach.dat</span> （收容失控实录 - 诡异档案）<br>
+  - <span class="warn-cn">override_protocol.cfg</span> （终极系统覆写配置说明）`);
+                } else {
+                    print(`【核心禁区 // 最终解密已激活】:<br>
+  - <span class="danger-cn">subject_zero_soul.log</span> （零号实体意识残留）<br>
+  - <span class="danger-cn">destruct_sequence.exe</span> （终极格式化与通关指令）`);
+                }
             }
-            // 2. 查看浅层/深层文件
+            // 2. 查看文件
             else if (cmd === 'cat') {
+                playRelaySound();
                 if (param === 'station_history.txt' || param === 'station_history') {
-                    print(`【4625 频道背景说明】<br>“蜂鸣电台”不仅是一个代号。当年我们在地下深处挖掘时，意外接触到了一种非物质的“硅基电磁实体”。为了将其隔绝，研究所启动了全频段噪音掩盖计划。`);
+                    print(`【4625 频道背景】<br>当年的幽灵电台不单是自动广播，它是人类试图对未知“硅基电磁迷因”进行单向封锁的物理防线。`);
                 } else if (param === 'staff_memo_1999.log' || param === 'staff_memo') {
-                    print(`【员工恐慌备忘录】<br>“它开始在显示屏上说话了。它模仿我们每个人的声音。如果你想打开更深处的禁区档案，必须先通过 <span class="highlight-cn">resonance_manual.txt</span> 了解如何校准硬件波形（谐振频率为 <span class="highlight-cn">1420</span>）。”`);
-                } else if (param === 'resonance_manual.txt' || param === 'resonance_manual') {
-                    print(`【谐振校准手册】<br>“防火墙由量子谐振锁保护。请在终端执行：<span class="highlight-cn">calibrate [4位谐振数值]</span> 来对齐波形。手册提示核心数值对应宇宙中最神秘的氢线频率前缀：<span class="highlight-cn">1420</span>。”`);
-                } else if (param === 'subject_zero_core.dat' || param === 'emergency_override.cfg') {
-                    if (!deepUnlocked) {
-                        print(`[访问拒绝] 该文件处于量子加密隔离状态！请先阅读 <span class="highlight-cn">resonance_manual.txt</span>，并在终端输入 <span class="highlight-cn">calibrate 1420</span> 完成全新解密玩法！`, 'danger-cn');
+                    print(`【1999 员工手记】<br>“它在监控我们。控制台的内存段里藏着主板总线漏洞。要想跳过防火墙进入中层，必须使用内存指针注入指令：<span class="highlight-cn">patch [内存地址代号]</span>。”`);
+                } else if (param === 'kernel_debug.txt' || param === 'kernel_debug') {
+                    print(`【内核调试说明】<br>“系统主板内存偏移量检测中……有效的高位注入指针代号为十六进制：<span class="highlight-cn">0x4F</span>。请尝试在终端输入：<span class="highlight-cn">patch 0x4f</span>。”`);
+                } 
+                // 中层文件
+                else if ((param === 'containment_breach.dat' || param === 'override_protocol.cfg') && accessLayer >= 2) {
+                    if (param.includes('containment')) {
+                        print(`【收容失控实录】<br><span class="glitch-text">[警告]</span> “研究员在连入本地终端后，身体在现实中消失了，意识却被永久锁在了服务器底座里。现在，屏幕前的你就是它的下一个寄宿体……”`);
                     } else {
-                        if (param.includes('subject')) {
-                            print(`【零号实体收容记录】<br><span class="glitch-text">[警告：精神污染]</span> “它已经顺着你的网卡爬上来了。你以为你在解密游戏？不，它正在借你的眼睛看着屏幕外的房间……”`, 'danger-cn');
-                        } else {
-                            print(`【终极系统覆写配置】<br>“若要彻底格式化此节点并阻断实体的入侵，必须输入最终覆写指令：<span class="highlight-cn">override VOID-9982</span>。”`, 'warn-cn');
-                        }
+                        print(`【覆写配置说明】<br>“若要执行终极格式化，必须先触发最终解密玩法。请向系统发送底层比特对齐指令：<span class="highlight-cn">align [安全校验码]</span>（校验码可在深层内核中找到）。”`);
+                        accessLayer = 3; // 推进到最终层解锁
                     }
+                } 
+                // 终极核心文件
+                else if ((param === 'subject_zero_soul.log' || param === 'destruct_sequence.exe') && accessLayer >= 3) {
+                    print(`【零号实体意识残留 / 终极指令】<br>“安全校验码已在底层生成：<span class="danger-cn">9982</span>。请立刻输入：<span class="highlight-cn">override VOID-9982</span> 格式化此地，否则你将永远离不开这里！”`, 'danger-cn');
                 } else {
-                    print(`[错误] 找不到该文件。输入 <span class="highlight-cn">ls</span> 查看全部卷宗。`, 'danger-cn');
+                    print(`[错误] 文件不存在，或者当前权限不足以访问该深层卷宗。请先输入 <span class="highlight-cn">ls</span> 查看可见层级。`, 'danger-cn');
                 }
             }
-            // 3. 全新解密玩法：波形谐振校准 (calibrate)
-            else if (cmd === 'calibrate') {
-                if (param === '1420') {
-                    deepUnlocked = true;
-                    calibrationDone = true;
+            // 3. 全新解密玩法一：内存指针注入 (patch) -> 突破到中层
+            else if (cmd === 'patch') {
+                if (param === '0x4f' || param === '4f') {
+                    accessLayer = 2;
                     playHorrorAlarm();
-                    statusInd.innerText = "警告：深层锁已破开 / 实体觉醒";
+                    statusInd.innerText = "警告：中层防线已破开";
                     statusInd.className = "danger-cn";
-                    screenGlow.style.background = "rgba(255, 51, 51, 0.1)";
+                    screenGlow.style.background = "rgba(255, 51, 51, 0.08)";
                     crtFrame.style.borderColor = "var(--dim-red)";
-                    viewportBg.style.filter = "contrast(1.4) brightness(0.35) saturate(2)";
+                    viewportBg.style.filter = "contrast(1.4) brightness(0.35) saturate(1.8)";
 
-                    print(`[谐振校准成功] 物理波形对齐！量子锁已强制崩解！`, 'success-cn');
-                    print(`[极度危险] 深层加密文件 <span class="danger-cn">subject_zero_core.dat</span> 与 <span class="danger-cn">emergency_override.cfg</span> 已强制解除锁定！`, 'danger-cn');
-                    print(`[诡异提示] 终端灯光由绿转红……请立刻用 <span class="highlight-cn">cat</span> 阅读深层档案并寻找逃生代码！`);
+                    print(`[内存注入成功] 指针 0x4F 写入内核生效！中层隔离沙盒已被强行剥离！`, 'success-cn');
+                    print(`[系统提示] 新的机密文件已解密掉落！请再次输入 <span class="highlight-cn">ls</span> 查看中层档案。`, 'warn-cn');
                 } else {
-                    print(`[校准失败] 谐振频率不匹配！波形剧烈撕裂！请仔细阅读 <span class="highlight-cn">resonance_manual.txt</span> 寻找正确的 4 位校准数值。`, 'danger-cn');
+                    print(`[注入失败] 内存地址错误！系统触发防御反击！请阅读 <span class="highlight-cn">kernel_debug.txt</span> 获取正确的十六进制指针。`, 'danger-cn');
                 }
             }
-            // 4. 终极覆写通关 (override)
+            // 4. 全新解密玩法二：比特对齐校验 (align) -> 确认最终通关代码
+            else if (cmd === 'align') {
+                if (param === '9982') {
+                    playHorrorAlarm();
+                    print(`[比特对齐成功] 量子校验完成！终极覆写指令已完全激活：<span class="success-cn">override VOID-9982</span>`, 'success-cn');
+                    print(`[最后通牒] 请立刻在终端输入：<span class="highlight-cn">override VOID-9982</span> 执行格式化逃生！`, 'warn-cn');
+                } else {
+                    print(`[校验失败] 校验数值不匹配！请先通过 <span class="highlight-cn">cat override_protocol.cfg</span> 获取正确的比特对齐码。`, 'danger-cn');
+                }
+            }
+            // 5. 终极覆写通关 (override)
             else if (cmd === 'override') {
                 if (param === 'void-9982' || param === 'VOID-9982') {
                     playHorrorAlarm();
-                    print(`[核心内核] 收到终极覆写指令：VOID-9982。`, 'success-cn');
-                    print(`[系统清空] 正在彻底格式化本地扇区，切断与实体的意识量子纠缠……`, 'success-cn');
-                    print(`[通关成功] 终端断电。你成功逃离了深层恐怖的意识陷阱！`, 'success-cn');
+                    print(`[内核销毁] 收到终极覆写指令：VOID-9982。`, 'success-cn');
+                    print(`[格式化中] 正在彻底清除本地数据磁道，切断与地下实体的量子缠绕……`, 'success-cn');
+                    print(`[通关成功] 意识链接已强行断开。欢迎回到现实世界！`, 'success-cn');
 
                     document.body.style.boxShadow = "inset 0 0 160px #ff3333";
                     setTimeout(() => {
-                        alert("【第二关完美通关】你成功破开深层机密并执行了覆写，回归现实世界！");
+                        alert("【第二关完美通关】你通过内存指针注入与比特对齐，成功粉碎了深层意识陷阱！");
                         // 预留跳转第三关：window.location.href = 'stage3.html';
                     }, 2000);
                 } else {
-                    print(`[拒绝执行] 覆写代码不正确！请先解锁深层文件（cat emergency_override.cfg）获取完整代码。`, 'danger-cn');
+                    print(`[拒绝执行] 覆写代码不正确！请先完成前置的解密与对齐步骤。`, 'danger-cn');
                 }
             }
             // 帮助
             else if (cmd === 'help') {
-                print(`【SECTOR-OMEGA 终端指令指南】:<br>
-  • <span class="highlight-cn">ls</span> - 列出所有浅层与深层服务器档案<br>
-  • <span class="highlight-cn">cat [文件名]</span> - 阅读文件了解剧情与线索<br>
-  • <span class="highlight-cn">calibrate [数值]</span> - <span class="warn-cn">[全新解密玩法]</span> 输入谐振频率破开深层加密锁<br>
-  • <span class="highlight-cn">override [终极代码]</span> - 在深层档案中找到代码后执行系统通关覆写<br>
+                print(`【SECTOR-OMEGA 终端高级指令指南】:<br>
+  • <span class="highlight-cn">ls</span> - 动态查看当前权限层级下的服务器文件<br>
+  • <span class="highlight-cn">cat [文件名]</span> - 阅读文件获取剧情与解密线索<br>
+  • <span class="highlight-cn">patch [十六进制指针]</span> - <span class="warn-cn">[解密玩法1]</span> 注入内存指针以破开中层沙盒（例：patch 0x4f）<br>
+  • <span class="highlight-cn">align [校验码]</span> - <span class="warn-cn">[解密玩法2]</span> 进行比特对齐校验获取终极指令<br>
+  • <span class="highlight-cn">override [终极代码]</span> - 执行终极格式化通关（例：override VOID-xxxx）<br>
   • <span class="highlight-cn">clear</span> - 清理屏幕`);
             }
             else if (cmd === 'clear') { logBox.innerHTML = ''; }
