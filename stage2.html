@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SDR-NODE // 核心控制台 (OVERRIDE)</title>
+    <style>
+        :root {
+            --green: #00ff66;
+            --amber: #ffaa00;
+            --red: #ff3333;
+            --cyan: #00e5ff;
+            --dim-red: rgba(255, 51, 51, 0.2);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body, html {
+            width: 100%; height: 100%;
+            background: #050000;
+            font-family: 'Courier New', 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+        }
+
+        /* 沉浸式场景背景：深红、工业废墟或服务器机房感 */
+        .viewport {
+            position: relative;
+            width: 100vw; height: 100vh;
+            background: url('https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat;
+            display: flex; justify-content: center; align-items: center;
+            filter: contrast(1.25) brightness(0.6) hue-rotate(-30deg);
+        }
+
+        .ambient-vignette {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(255,0,0,0.05) 10%, rgba(0,0,0,0.98) 90%);
+            pointer-events: none; z-index: 1;
+        }
+
+        .screen-glow {
+            position: absolute; width: 700px; height: 480px;
+            background: rgba(255, 51, 51, 0.04);
+            border-radius: 50%; filter: blur(120px);
+            pointer-events: none; z-index: 2;
+            transition: background 1s ease;
+        }
+
+        /* CRT 显示屏外壳（第二关偏向红色警报主题） */
+        .crt-frame {
+            position: relative; z-index: 10;
+            width: 94%; max-width: 760px;
+            background: rgba(10, 2, 2, 0.95);
+            border: 2px solid var(--dim-red);
+            border-radius: 12px; padding: 22px;
+            box-shadow: 0 0 60px rgba(255, 0, 0, 0.2), inset 0 0 25px rgba(255, 51, 51, 0.08);
+            backdrop-filter: blur(6px);
+        }
+
+        /* CRT 扫描线效应 */
+        .crt-frame::after {
+            content: " "; position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%);
+            background-size: 100% 4px; pointer-events: none; border-radius: 10px;
+        }
+
+        .screen-header {
+            display: flex; justify-content: space-between; align-items: center;
+            color: var(--red); font-size: 12px;
+            border-bottom: 1px solid var(--dim-red);
+            padding-bottom: 8px; margin-bottom: 12px;
+            letter-spacing: 1px; text-shadow: 0 0 4px var(--red);
+        }
+
+        .header-tags span {
+            background: rgba(255, 51, 51, 0.1);
+            padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px;
+        }
+
+        /* 核心心跳/波形画布 */
+        #spectrumCanvas {
+            width: 100%; height: 115px;
+            background: #080101;
+            border: 1px solid var(--dim-red);
+            margin-bottom: 12px; display: block;
+            border-radius: 4px;
+        }
+
+        /* 交互日志区 */
+        .terminal-log {
+            height: 180px; overflow-y: auto;
+            color: #ff8888; font-size: 13px; line-height: 1.6;
+            word-break: break-all; margin-bottom: 12px;
+            text-shadow: 0 0 4px rgba(255, 51, 51, 0.2);
+            user-select: text;
+            padding-right: 5px;
+        }
+
+        .terminal-log::-webkit-scrollbar { width: 4px; }
+        .terminal-log::-webkit-scrollbar-thumb { background: var(--dim-red); border-radius: 2px; }
+
+        /* 命令行输入框 */
+        .command-bar {
+            display: flex; align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid var(--dim-red);
+            padding: 10px 12px; border-radius: 4px;
+        }
+
+        .prompt { color: var(--red); margin-right: 10px; font-size: 13px; font-weight: bold; }
+        .cmd-input {
+            background: transparent; border: none; outline: none;
+            color: #fff; font-family: inherit; font-size: 13px; flex: 1;
+            text-shadow: 0 0 6px var(--red); user-select: text;
+        }
+
+        .highlight-cn { color: #fff; font-weight: bold; background: rgba(255,255,255,0.15); padding: 0 4px; border-radius: 2px; }
+        .warn-cn { color: var(--amber); font-weight: bold; }
+        .success-cn { color: var(--green); font-weight: bold; }
+        .danger-cn { color: var(--red); font-weight: bold; text-shadow: 0 0 6px var(--red); }
+        .glitch-text { color: #ff3333; animation: flicker 0.15s infinite; }
+
+        @keyframes flicker {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; }
+            100% { opacity: 0.9; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="viewport">
+    <div class="ambient-vignette"></div>
+    <div class="screen-glow" id="screenGlow"></div>
+
+    <div class="crt-frame">
+        <div class="screen-header">
+            <div>
+                <b>深度核心控制台 // PROTOCOL-OMEGA</b>
+                <span class="header-tags"><span>隔离网段</span><span>状态: 异常</span></span>
+            </div>
+            <span id="statusInd" class="danger-cn">警告：未知实体连接</span>
+        </div>
+
+        <canvas id="spectrumCanvas"></canvas>
+
+        <div class="terminal-log" id="logBox">
+[安全网关] 授权代码 8912 验证通过。<br>
+[核心系统] 正在加载底层沙盒内核...<br>
+<span class="danger-cn">[致命警告] 检测到非授权生物特征接入。神经网络联动中...</span><br>
+[提示] 输入 <span class="highlight-cn">help</span> 获取可用协议指令，寻找脱离此地的路径。<br>
+----------------------------------------------------------------------
+        </div>
+
+        <div class="command-bar">
+            <span class="prompt">ROOT@OMEGA:~#</span>
+            <input type="text" class="cmd-input" id="cmdInput" autofocus autocomplete="off" spellcheck="false" placeholder="输入指令...">
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('spectrumCanvas');
+    const ctx = canvas.getContext('2d');
+    const logBox = document.getElementById('logBox');
+    const cmdInput = document.getElementById('cmdInput');
+    const statusInd = document.getElementById('statusInd');
+    const screenGlow = document.getElementById('screenGlow');
+
+    let audioCtx = null, noiseNode = null, noiseGain = null;
+    let securityLevel = 1; // 1: 初始, 2: 已查阅核心档案, 3: 触发自毁/破解边缘
+
+    function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // 🔊 恐怖低频嗡鸣与环境音效
+    function initAudio() {
+        if (audioCtx) return;
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+
+            // 低频心跳/脉冲噪音
+            const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+            const data = buf.getChannelData(0);
+            for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
+
+            noiseNode = audioCtx.createBufferSource();
+            noiseNode.buffer = buf; noiseNode.loop = true;
+
+            noiseGain = audioCtx.createGain();
+            noiseGain.gain.value = 0.008;
+
+            noiseNode.connect(noiseGain);
+            noiseGain.connect(audioCtx.destination);
+            noiseNode.start();
+        } catch(e){}
+    }
+
+    // 键盘音效（偏机械沉闷）
+    function playKeySound() {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(80 + Math.random() * 40, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    // 警报/继电器音效
+    function playAlarmSound() {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    // 绘制第二关的动态心跳/脉冲波形
+    function renderSpectrum() {
+        ctx.fillStyle = "rgba(8, 1, 1, 0.25)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 网格线（血红色）
+        ctx.strokeStyle = "rgba(255, 51, 51, 0.06)";
+        ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += 30) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.lineWidth = 1.8;
+        ctx.strokeStyle = "#ff3333";
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = "#ff3333";
+
+        const slice = canvas.width / 100;
+        let x = 0;
+
+        for (let i = 0; i < 100; i++) {
+            // 模拟心跳突波
+            let amp = Math.random() * 6;
+            if (i > 45 && i < 55) {
+                amp = Math.sin(i * 0.5) * 45 + Math.random() * 10; // 心跳峰值
+            }
+            let y = canvas.height / 2 + (Math.random() > 0.5 ? amp : -amp);
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            x += slice;
+        }
+        ctx.stroke();
+
+        // 核心动态提示
+        if (securityLevel >= 2) {
+            ctx.font = "bold 14px 'Courier New', monospace";
+            ctx.fillStyle = "#ffaa00";
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "#ffaa00";
+            ctx.fillText("【监控状态】 意识上传进度: 87% (不可逆)", canvas.width / 2 - 160, canvas.height - 10);
+        }
+
+        requestAnimationFrame(renderSpectrum);
+    }
+    renderSpectrum();
+
+    function print(msg, customClass = '') {
+        const div = document.createElement('div');
+        if (customClass) div.className = customClass;
+        div.innerHTML = msg;
+        logBox.appendChild(div);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // 命令行交互逻辑
+    cmdInput.addEventListener('keydown', (e) => {
+        initAudio();
+        playKeySound();
+
+        if (e.key === 'Enter') {
+            const val = cmdInput.value.trim();
+            cmdInput.value = '';
+            if (!val) return;
+
+            print(`ROOT@OMEGA:~# ${val}`);
+            const parts = val.split(' ');
+            const cmd = parts[0].toLowerCase();
+            const param = parts[1] ? parts[1].toLowerCase() : '';
+
+            // 1. 查看文件列表
+            if (cmd === 'ls') {
+                playAlarmSound();
+                print(`文件目录：<br>- project_icarus.log （核心实验记录）<br>- entity_status.dat （未知生物特征数据）<br>- override_protocol.txt （系统最高覆写说明）`);
+            }
+            // 2. 查看文件内容
+            else if (cmd === 'cat') {
+                playAlarmSound();
+                if (param === 'project_icarus.log' || param === 'project_icarus') {
+                    securityLevel = 2;
+                    print(`【伊卡洛斯计划日志】<br>我们在 4625 kHz 频道后方捕获到了“它”。那不是人类的信号，是一段自我复制的迷因代码。<br>当终端连入后，它会篡改你的本地现实。唯一的逃离方式是执行物理断开。<br>覆写密钥提示：单词 <span class="highlight-cn">VOID</span> 加上系统最终防线编号。`);
+                } else if (param === 'entity_status.dat' || param === 'entity_status') {
+                    print(`【实体数据】<br>状态：已锁定你的生物电磁场。<br>警告：不要相信控制台给出的任何倒计时。`);
+                } else if (param === 'override_protocol.txt' || param === 'override_protocol') {
+                    print(`【最高覆写说明】<br>若要终止进程并销毁节点，必须输入专属覆写指令。<br>完整覆写代码格式：<span class="highlight-cn">override VOID-7704</span>`);
+                } else {
+                    print(`[错误] 找不到指定文件或文件已被加密锁定。`, 'danger-cn');
+                }
+            }
+            // 3. 核心覆写指令（通关点）
+            else if (cmd === 'override') {
+                if (param === 'void-7704' || param === 'VOID-7704') {
+                    playAlarmSound();
+                    print(`[致命执行] 正在启动核心自毁与格式化程序...`, 'success-cn');
+                    print(`[系统提示] 神经网络连接已强制切断。欢迎回到现实。`, 'success-cn');
+                    document.body.style.boxShadow = "inset 0 0 150px #ff3333";
+                    
+                    setTimeout(() => {
+                        // 这里可以跳转到第三关，或者通关结算页面
+                        alert("【ARG 解密成功】你成功逃离了 SDR-NODE 废弃终端的意识陷阱。");
+                        // window.location.href = 'stage3.html';
+                    }, 2000);
+                } else {
+                    print(`[拒绝访问] 覆写代码错误！实体正在笑... 检查 <span class="highlight-cn">cat override_protocol.txt</span>`, 'danger-cn');
+                }
+            }
+            // 帮助
+            else if (cmd === 'help') {
+                print(`【核心终端可用指令】:<br>
+  • <span class="highlight-cn">ls</span> - 扫描当前沙盒安全目录<br>
+  • <span class="highlight-cn">cat [文件名]</span> - 读取机密文档（如 project_icarus.log）<br>
+  • <span class="highlight-cn">override [代码]</span> - 执行安全覆写与终端解脱（例：override xxxx）<br>
+  • <span class="highlight-cn">clear</span> - 清理屏幕`);
+            }
+            else if (cmd === 'clear') { logBox.innerHTML = ''; }
+            else { print(`未识别的内核指令: ${cmd}。输入 <span class="highlight-cn">help</span> 查看。`, 'danger-cn'); }
+        }
+    });
+
+    document.addEventListener('click', () => cmdInput.focus());
+</script>
+
+</body>
+</html>
