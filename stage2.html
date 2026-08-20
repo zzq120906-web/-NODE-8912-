@@ -3,56 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SDR-NODE // 核心控制台 (OVERRIDE)</title>
+    <title>SDR-NODE // 内部终端网络 (4625-SUB)</title>
     <style>
         :root {
             --green: #00ff66;
             --amber: #ffaa00;
             --red: #ff3333;
             --cyan: #00e5ff;
-            --dim-red: rgba(255, 51, 51, 0.2);
+            --dim-green: rgba(0, 255, 102, 0.2);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
         body, html {
             width: 100%; height: 100%;
-            background: #050000;
+            background: #000;
             font-family: 'Courier New', 'Microsoft YaHei', sans-serif;
             overflow: hidden;
         }
 
-        /* 沉浸式场景背景：深红、工业废墟或服务器机房感 */
+        /* 保留第一关的沉浸式场景底图与滤镜 */
         .viewport {
             position: relative;
             width: 100vw; height: 100vh;
-            background: url('https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat;
+            background: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat;
             display: flex; justify-content: center; align-items: center;
-            filter: contrast(1.25) brightness(0.6) hue-rotate(-30deg);
+            filter: contrast(1.15) brightness(0.8);
         }
 
         .ambient-vignette {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(255,0,0,0.05) 10%, rgba(0,0,0,0.98) 90%);
+            background: radial-gradient(circle, rgba(0,0,0,0.2) 20%, rgba(0,0,0,0.95) 100%);
             pointer-events: none; z-index: 1;
         }
 
         .screen-glow {
             position: absolute; width: 700px; height: 480px;
-            background: rgba(255, 51, 51, 0.04);
-            border-radius: 50%; filter: blur(120px);
+            background: rgba(0, 255, 102, 0.03);
+            border-radius: 50%; filter: blur(100px);
             pointer-events: none; z-index: 2;
             transition: background 1s ease;
         }
 
-        /* CRT 显示屏外壳（第二关偏向红色警报主题） */
+        /* CRT 显示屏外壳（维持绿色美学） */
         .crt-frame {
             position: relative; z-index: 10;
             width: 94%; max-width: 760px;
-            background: rgba(10, 2, 2, 0.95);
-            border: 2px solid var(--dim-red);
+            background: rgba(4, 10, 6, 0.95);
+            border: 2px solid var(--dim-green);
             border-radius: 12px; padding: 22px;
-            box-shadow: 0 0 60px rgba(255, 0, 0, 0.2), inset 0 0 25px rgba(255, 51, 51, 0.08);
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.95), inset 0 0 20px rgba(0, 255, 102, 0.08);
             backdrop-filter: blur(6px);
         }
 
@@ -60,71 +60,64 @@
         .crt-frame::after {
             content: " "; position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%);
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%);
             background-size: 100% 4px; pointer-events: none; border-radius: 10px;
         }
 
         .screen-header {
             display: flex; justify-content: space-between; align-items: center;
-            color: var(--red); font-size: 12px;
-            border-bottom: 1px solid var(--dim-red);
+            color: var(--green); font-size: 12px;
+            border-bottom: 1px solid var(--dim-green);
             padding-bottom: 8px; margin-bottom: 12px;
-            letter-spacing: 1px; text-shadow: 0 0 4px var(--red);
+            letter-spacing: 1px; text-shadow: 0 0 4px var(--green);
         }
 
         .header-tags span {
-            background: rgba(255, 51, 51, 0.1);
+            background: rgba(0, 255, 102, 0.1);
             padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px;
         }
 
-        /* 核心心跳/波形画布 */
+        /* 频谱/状态示波器 */
         #spectrumCanvas {
-            width: 100%; height: 115px;
-            background: #080101;
-            border: 1px solid var(--dim-red);
+            width: 100%; height: 125px;
+            background: #010502;
+            border: 1px solid var(--dim-green);
             margin-bottom: 12px; display: block;
             border-radius: 4px;
         }
 
         /* 交互日志区 */
         .terminal-log {
-            height: 180px; overflow-y: auto;
-            color: #ff8888; font-size: 13px; line-height: 1.6;
+            height: 170px; overflow-y: auto;
+            color: var(--green); font-size: 13px; line-height: 1.6;
             word-break: break-all; margin-bottom: 12px;
-            text-shadow: 0 0 4px rgba(255, 51, 51, 0.2);
+            text-shadow: 0 0 4px rgba(0, 255, 102, 0.3);
             user-select: text;
             padding-right: 5px;
         }
 
         .terminal-log::-webkit-scrollbar { width: 4px; }
-        .terminal-log::-webkit-scrollbar-thumb { background: var(--dim-red); border-radius: 2px; }
+        .terminal-log::-webkit-scrollbar-thumb { background: var(--dim-green); border-radius: 2px; }
 
         /* 命令行输入框 */
         .command-bar {
             display: flex; align-items: center;
             background: rgba(0, 0, 0, 0.85);
-            border: 1px solid var(--dim-red);
+            border: 1px solid var(--dim-green);
             padding: 10px 12px; border-radius: 4px;
         }
 
-        .prompt { color: var(--red); margin-right: 10px; font-size: 13px; font-weight: bold; }
+        .prompt { color: var(--green); margin-right: 10px; font-size: 13px; font-weight: bold; }
         .cmd-input {
             background: transparent; border: none; outline: none;
             color: #fff; font-family: inherit; font-size: 13px; flex: 1;
-            text-shadow: 0 0 6px var(--red); user-select: text;
+            text-shadow: 0 0 6px var(--green); user-select: text;
         }
 
         .highlight-cn { color: #fff; font-weight: bold; background: rgba(255,255,255,0.15); padding: 0 4px; border-radius: 2px; }
         .warn-cn { color: var(--amber); font-weight: bold; }
         .success-cn { color: var(--green); font-weight: bold; }
-        .danger-cn { color: var(--red); font-weight: bold; text-shadow: 0 0 6px var(--red); }
-        .glitch-text { color: #ff3333; animation: flicker 0.15s infinite; }
-
-        @keyframes flicker {
-            0% { opacity: 0.8; }
-            50% { opacity: 1; }
-            100% { opacity: 0.9; }
-        }
+        .danger-cn { color: var(--red); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -136,25 +129,24 @@
     <div class="crt-frame">
         <div class="screen-header">
             <div>
-                <b>深度核心控制台 // PROTOCOL-OMEGA</b>
-                <span class="header-tags"><span>隔离网段</span><span>状态: 异常</span></span>
+                <b>地下控制网络 // 4625-SUB-NODE</b>
+                <span class="header-tags"><span>内网接入</span><span>解密关卡 II</span></span>
             </div>
-            <span id="statusInd" class="danger-cn">警告：未知实体连接</span>
+            <span id="statusInd" class="success-cn">已连接至目标内网</span>
         </div>
 
         <canvas id="spectrumCanvas"></canvas>
 
         <div class="terminal-log" id="logBox">
-[安全网关] 授权代码 8912 验证通过。<br>
-[核心系统] 正在加载底层沙盒内核...<br>
-<span class="danger-cn">[致命警告] 检测到非授权生物特征接入。神经网络联动中...</span><br>
-[提示] 输入 <span class="highlight-cn">help</span> 获取可用协议指令，寻找脱离此地的路径。<br>
+[授权确认] 验证码 8912 握手成功。正在穿透 4625 kHz 频道背后的加密沙盒...<br>
+[剧情交接] 你成功顺着第一关收听到的幽灵电台，反向追踪到了这个被遗弃数十年的地下基站内部终端。<br>
+[系统提示] 这里拥有极高的自由探索空间。输入 <span class="highlight-cn">ls</span> 查看服务器内留存的所有档案，找出当年 4625 信号背后的秘密，并尝试寻找安全覆写指令。<br>
 ----------------------------------------------------------------------
         </div>
 
         <div class="command-bar">
-            <span class="prompt">ROOT@OMEGA:~#</span>
-            <input type="text" class="cmd-input" id="cmdInput" autofocus autocomplete="off" spellcheck="false" placeholder="输入指令...">
+            <span class="prompt">SUB-NODE:~#</span>
+            <input type="text" class="cmd-input" id="cmdInput" autofocus autocomplete="off" spellcheck="false" placeholder="输入 ls 或 help 开始探索...">
         </div>
     </div>
 </div>
@@ -168,29 +160,28 @@
     const screenGlow = document.getElementById('screenGlow');
 
     let audioCtx = null, noiseNode = null, noiseGain = null;
-    let securityLevel = 1; // 1: 初始, 2: 已查阅核心档案, 3: 触发自毁/破解边缘
+    let filesReadCount = 0; // 记录玩家探索了多少文件
 
     function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
     window.addEventListener('resize', resize);
     resize();
 
-    // 🔊 恐怖低频嗡鸣与环境音效
+    // 🔊 音频合成器（延续第一关的沙沙声与按键声）
     function initAudio() {
         if (audioCtx) return;
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
 
-            // 低频心跳/脉冲噪音
             const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
             const data = buf.getChannelData(0);
-            for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
+            for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
 
             noiseNode = audioCtx.createBufferSource();
             noiseNode.buffer = buf; noiseNode.loop = true;
 
             noiseGain = audioCtx.createGain();
-            noiseGain.gain.value = 0.008;
+            noiseGain.gain.value = 0.003; // 轻微内网电流声
 
             noiseNode.connect(noiseGain);
             noiseGain.connect(audioCtx.destination);
@@ -198,74 +189,61 @@
         } catch(e){}
     }
 
-    // 键盘音效（偏机械沉闷）
     function playKeySound() {
         if (!audioCtx) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(80 + Math.random() * 40, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(140 + Math.random() * 60, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.012, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.04);
         osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.04);
     }
 
-    // 警报/继电器音效
-    function playAlarmSound() {
+    function playRelaySound() {
         if (!audioCtx) return;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+        for (let i = 0; i < 2; i++) {
+            setTimeout(() => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(500 + Math.random() * 200, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.04);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+            }, i * 60);
+        }
     }
 
-    // 绘制第二关的动态心跳/脉冲波形
+    // 示波器渲染（平稳内网数据流波形）
     function renderSpectrum() {
-        ctx.fillStyle = "rgba(8, 1, 1, 0.25)";
+        ctx.fillStyle = "rgba(1, 5, 2, 0.22)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // 网格线（血红色）
-        ctx.strokeStyle = "rgba(255, 51, 51, 0.06)";
+        ctx.strokeStyle = "rgba(0, 255, 102, 0.08)";
         ctx.lineWidth = 1;
         for (let x = 0; x < canvas.width; x += 30) {
             ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
         }
 
         ctx.beginPath();
-        ctx.lineWidth = 1.8;
-        ctx.strokeStyle = "#ff3333";
-        ctx.shadowBlur = 6;
-        ctx.shadowColor = "#ff3333";
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "#00ff66";
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = "#00ff66";
 
-        const slice = canvas.width / 100;
+        const slice = canvas.width / 90;
         let x = 0;
 
-        for (let i = 0; i < 100; i++) {
-            // 模拟心跳突波
-            let amp = Math.random() * 6;
-            if (i > 45 && i < 55) {
-                amp = Math.sin(i * 0.5) * 45 + Math.random() * 10; // 心跳峰值
-            }
+        for (let i = 0; i < 90; i++) {
+            let amp = Math.random() * 8 + 2;
             let y = canvas.height / 2 + (Math.random() > 0.5 ? amp : -amp);
             if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             x += slice;
         }
         ctx.stroke();
-
-        // 核心动态提示
-        if (securityLevel >= 2) {
-            ctx.font = "bold 14px 'Courier New', monospace";
-            ctx.fillStyle = "#ffaa00";
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = "#ffaa00";
-            ctx.fillText("【监控状态】 意识上传进度: 87% (不可逆)", canvas.width / 2 - 160, canvas.height - 10);
-        }
 
         requestAnimationFrame(renderSpectrum);
     }
@@ -275,11 +253,12 @@
         const div = document.createElement('div');
         if (customClass) div.className = customClass;
         div.innerHTML = msg;
+        logBox.async = true;
         logBox.appendChild(div);
         logBox.scrollTop = logBox.scrollHeight;
     }
 
-    // 命令行交互逻辑
+    // 第二关的命令解析引擎（给予玩家充分的自由探索）
     cmdInput.addEventListener('keydown', (e) => {
         initAudio();
         playKeySound();
@@ -289,57 +268,66 @@
             cmdInput.value = '';
             if (!val) return;
 
-            print(`ROOT@OMEGA:~# ${val}`);
+            print(`SUB-NODE:~# ${val}`);
             const parts = val.split(' ');
             const cmd = parts[0].toLowerCase();
             const param = parts[1] ? parts[1].toLowerCase() : '';
 
-            // 1. 查看文件列表
+            // 1. 自由查看目录
             if (cmd === 'ls') {
-                playAlarmSound();
-                print(`文件目录：<br>- project_icarus.log （核心实验记录）<br>- entity_status.dat （未知生物特征数据）<br>- override_protocol.txt （系统最高覆写说明）`);
+                playRelaySound();
+                print(`【当前目录下的存储文件】:<br>
+  - <span class="highlight-cn">project_4625.log</span> （关于第一关幽灵电台的起源报告）<br>
+  - <span class="highlight-cn">station_log_1999.txt</span> （地下科研人员留下的绝笔手记）<br>
+  - <span class="highlight-cn">security_memo.dat</span> （安全管理条例与系统重置线索）<br>
+  - <span class="highlight-cn">emergency_exit.cfg</span> （逃离系统所需的配置说明）`);
             }
-            // 2. 查看文件内容
+            // 2. 自由探索/查阅多个文件 (cat)
             else if (cmd === 'cat') {
-                playAlarmSound();
-                if (param === 'project_icarus.log' || param === 'project_icarus') {
-                    securityLevel = 2;
-                    print(`【伊卡洛斯计划日志】<br>我们在 4625 kHz 频道后方捕获到了“它”。那不是人类的信号，是一段自我复制的迷因代码。<br>当终端连入后，它会篡改你的本地现实。唯一的逃离方式是执行物理断开。<br>覆写密钥提示：单词 <span class="highlight-cn">VOID</span> 加上系统最终防线编号。`);
-                } else if (param === 'entity_status.dat' || param === 'entity_status') {
-                    print(`【实体数据】<br>状态：已锁定你的生物电磁场。<br>警告：不要相信控制台给出的任何倒计时。`);
-                } else if (param === 'override_protocol.txt' || param === 'override_protocol') {
-                    print(`【最高覆写说明】<br>若要终止进程并销毁节点，必须输入专属覆写指令。<br>完整覆写代码格式：<span class="highlight-cn">override VOID-7704</span>`);
+                playRelaySound();
+                if (param === 'project_4625.log' || param === '4625') {
+                    filesReadCount++;
+                    print(`【项目 4625 起源报告】<br>当年我们在短波段持续发射无意义的蜂鸣与代号，是为了掩盖地下实验室对某种未知深层电磁波的收容研究。后来，研究员们集体失联，电台却依然在自动循环……`);
+                } else if (param === 'station_log_1999.txt' || param === 'station_log') {
+                    filesReadCount++;
+                    print(`【绝笔手记 - 1999.08.22】<br>“设备失控了。它在通过电波反向读取我们的意识。如果后人通过外部 SDR 终端连进来了，千万不要尝试与它深度绑定。系统内部存在硬编码的安全解脱协议。”`);
+                } else if (param === 'security_memo.dat' || param === 'security_memo') {
+                    filesReadCount++;
+                    print(`【安全管理条例】<br>系统紧急重置命令格式为：<span class="highlight-cn">override [主密钥]</span>。<br>主密钥的前半部分是当年基站代号 <span class="highlight-cn">OMEGA</span>，后半部分可在逃离配置文件中找到。`);
+                } else if (param === 'emergency_exit.cfg' || param === 'emergency_exit') {
+                    filesReadCount++;
+                    print(`【紧急出口配置】<br>配置参数载入：安全网关重置密钥尾缀已确认：<span class="highlight-cn">-9982</span>。<br>（提示：你可以尝试输入 override OMEGA-9982 来执行最终系统剥离）`);
                 } else {
-                    print(`[错误] 找不到指定文件或文件已被加密锁定。`, 'danger-cn');
+                    print(`[错误] 找不到该文件。请先输入 <span class="highlight-cn">ls</span> 查看可用文件列表。`, 'danger-cn');
                 }
             }
-            // 3. 核心覆写指令（通关点）
+            // 3. 终极覆写/解谜通关 (override)
             else if (cmd === 'override') {
-                if (param === 'void-7704' || param === 'VOID-7704') {
-                    playAlarmSound();
-                    print(`[致命执行] 正在启动核心自毁与格式化程序...`, 'success-cn');
-                    print(`[系统提示] 神经网络连接已强制切断。欢迎回到现实。`, 'success-cn');
-                    document.body.style.boxShadow = "inset 0 0 150px #ff3333";
+                if (param === 'omega-9982' || param === 'OMEGA-9982') {
+                    playRelaySound();
+                    print(`[系统内核] 收到最高覆写指令：OMEGA-9982。`, 'success-cn');
+                    print(`[底层重构] 正在格式化本地沙盒，断开与 4625 频道的量子缠绕……`, 'success-cn');
+                    print(`[通关提示] 恭喜你成功解开第二关！即将进入下一阶段（或通关结局）！`, 'success-cn');
                     
+                    document.body.style.boxShadow = "inset 0 0 120px #00ff66";
                     setTimeout(() => {
-                        // 这里可以跳转到第三关，或者通关结算页面
-                        alert("【ARG 解密成功】你成功逃离了 SDR-NODE 废弃终端的意识陷阱。");
-                        // window.location.href = 'stage3.html';
-                    }, 2000);
+                        alert("【第二关解密成功】你已彻底关闭了地下终端的意识循环，成功脱离险境！");
+                        // 可以在此跳转到第三关：window.location.href = 'stage3.html';
+                    }, 1800);
                 } else {
-                    print(`[拒绝访问] 覆写代码错误！实体正在笑... 检查 <span class="highlight-cn">cat override_protocol.txt</span>`, 'danger-cn');
+                    print(`[拒绝执行] 密钥不匹配！请先通过 <span class="highlight-cn">ls</span> 和 <span class="highlight-cn">cat</span> 充分探索服务器内的所有档案文件以凑齐密钥。`, 'danger-cn');
                 }
             }
-            // 帮助
+            // 常用帮助
             else if (cmd === 'help') {
-                print(`【核心终端可用指令】:<br>
-  • <span class="highlight-cn">ls</span> - 扫描当前沙盒安全目录<br>
-  • <span class="highlight-cn">cat [文件名]</span> - 读取机密文档（如 project_icarus.log）<br>
-  • <span class="highlight-cn">override [代码]</span> - 执行安全覆写与终端解脱（例：override xxxx）<br>
+                print(`【第二关探索指南】:<br>
+  • <span class="highlight-cn">ls</span> - 探索并列出服务器中留存的所有档案文件<br>
+  • <span class="highlight-cn">cat [文件名]</span> - 自由阅读指定文件的剧情与线索（如 cat project_4625.log）<br>
+  • <span class="highlight-cn">override [密钥]</span> - 拼凑线索并输入最终覆写指令以通关（例：override OMEGA-xxxx）<br>
   • <span class="highlight-cn">clear</span> - 清理屏幕`);
             }
             else if (cmd === 'clear') { logBox.innerHTML = ''; }
-            else { print(`未识别的内核指令: ${cmd}。输入 <span class="highlight-cn">help</span> 查看。`, 'danger-cn'); }
+            else { print(`未识别的指令: ${cmd}。输入 <span class="highlight-cn">help</span> 查看探索指南。`, 'danger-cn'); }
         }
     });
 
