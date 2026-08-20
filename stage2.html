@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SDR-NODE // 内部终端网络 (4625-SUB)</title>
+    <title>SDR-NODE // 深层隔离区 (RESTRICTED)</title>
     <style>
         :root {
             --green: #00ff66;
@@ -11,56 +11,57 @@
             --red: #ff3333;
             --cyan: #00e5ff;
             --dim-green: rgba(0, 255, 102, 0.2);
+            --dim-red: rgba(255, 51, 51, 0.2);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
         body, html {
             width: 100%; height: 100%;
-            background: #000;
+            background: #020402;
             font-family: 'Courier New', 'Microsoft YaHei', sans-serif;
             overflow: hidden;
         }
 
-        /* 保留第一关的沉浸式场景底图与滤镜 */
+        /* 更换为充满工业废墟、幽暗深渊感的恐怖风底图 */
         .viewport {
             position: relative;
             width: 100vw; height: 100vh;
-            background: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat;
+            background: url('https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat;
             display: flex; justify-content: center; align-items: center;
-            filter: contrast(1.15) brightness(0.8);
+            filter: contrast(1.3) brightness(0.45) saturate(1.5);
         }
 
         .ambient-vignette {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0.2) 20%, rgba(0,0,0,0.95) 100%);
+            background: radial-gradient(circle, rgba(0,20,5,0.1) 10%, rgba(0,0,0,0.98) 85%);
             pointer-events: none; z-index: 1;
         }
 
         .screen-glow {
             position: absolute; width: 700px; height: 480px;
-            background: rgba(0, 255, 102, 0.03);
-            border-radius: 50%; filter: blur(100px);
+            background: rgba(0, 255, 102, 0.04);
+            border-radius: 50%; filter: blur(110px);
             pointer-events: none; z-index: 2;
             transition: background 1s ease;
         }
 
-        /* CRT 显示屏外壳（维持绿色美学） */
+        /* CRT 显示屏外壳 */
         .crt-frame {
             position: relative; z-index: 10;
             width: 94%; max-width: 760px;
-            background: rgba(4, 10, 6, 0.95);
+            background: rgba(2, 8, 4, 0.96);
             border: 2px solid var(--dim-green);
             border-radius: 12px; padding: 22px;
-            box-shadow: 0 0 60px rgba(0, 0, 0, 0.95), inset 0 0 20px rgba(0, 255, 102, 0.08);
-            backdrop-filter: blur(6px);
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.98), inset 0 0 25px rgba(0, 255, 102, 0.06);
+            backdrop-filter: blur(8px);
         }
 
         /* CRT 扫描线效应 */
         .crt-frame::after {
             content: " "; position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%);
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%);
             background-size: 100% 4px; pointer-events: none; border-radius: 10px;
         }
 
@@ -77,10 +78,10 @@
             padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px;
         }
 
-        /* 频谱/状态示波器 */
+        /* 动态心跳/威胁示波器 */
         #spectrumCanvas {
-            width: 100%; height: 125px;
-            background: #010502;
+            width: 100%; height: 120px;
+            background: #010401;
             border: 1px solid var(--dim-green);
             margin-bottom: 12px; display: block;
             border-radius: 4px;
@@ -88,7 +89,7 @@
 
         /* 交互日志区 */
         .terminal-log {
-            height: 170px; overflow-y: auto;
+            height: 175px; overflow-y: auto;
             color: var(--green); font-size: 13px; line-height: 1.6;
             word-break: break-all; margin-bottom: 12px;
             text-shadow: 0 0 4px rgba(0, 255, 102, 0.3);
@@ -117,7 +118,7 @@
         .highlight-cn { color: #fff; font-weight: bold; background: rgba(255,255,255,0.15); padding: 0 4px; border-radius: 2px; }
         .warn-cn { color: var(--amber); font-weight: bold; }
         .success-cn { color: var(--green); font-weight: bold; }
-        .danger-cn { color: var(--red); font-weight: bold; }
+        .danger-cn { color: var(--red); font-weight: bold; text-shadow: 0 0 6px var(--red); }
     </style>
 </head>
 <body>
@@ -129,24 +130,25 @@
     <div class="crt-frame">
         <div class="screen-header">
             <div>
-                <b>地下控制网络 // 4625-SUB-NODE</b>
-                <span class="header-tags"><span>内网接入</span><span>解密关卡 II</span></span>
+                <b>地下核心沙盒 // SECTOR-04</b>
+                <span class="header-tags"><span>已建立握手</span><span>威胁等级: 高</span></span>
             </div>
-            <span id="statusInd" class="success-cn">已连接至目标内网</span>
+            <span id="statusInd" class="warn-cn">意识同步中...</span>
         </div>
 
         <canvas id="spectrumCanvas"></canvas>
 
         <div class="terminal-log" id="logBox">
-[授权确认] 验证码 8912 握手成功。正在穿透 4625 kHz 频道背后的加密沙盒...<br>
-[剧情交接] 你成功顺着第一关收听到的幽灵电台，反向追踪到了这个被遗弃数十年的地下基站内部终端。<br>
-[系统提示] 这里拥有极高的自由探索空间。输入 <span class="highlight-cn">ls</span> 查看服务器内留存的所有档案，找出当年 4625 信号背后的秘密，并尝试寻找安全覆写指令。<br>
+[系统内核] 验证码 8912 确认。底层沙盒已挂载。<br>
+[剧情交接] 你通过第一关的短波 4625 信号，成功反向黑入了这座废弃数十年的深层地下科研所。<br>
+[恐怖警告] 这里的日志显示，当年的研究员并未撤离，而是被“锁”在了数据流里……<br>
+[提示] 输入 <span class="highlight-cn">ls</span> 查看公开文件，或直接探索深层加密档案。<br>
 ----------------------------------------------------------------------
         </div>
 
         <div class="command-bar">
-            <span class="prompt">SUB-NODE:~#</span>
-            <input type="text" class="cmd-input" id="cmdInput" autofocus autocomplete="off" spellcheck="false" placeholder="输入 ls 或 help 开始探索...">
+            <span class="prompt">SECTOR-04:~#</span>
+            <input type="text" class="cmd-input" id="cmdInput" autofocus autocomplete="off" spellcheck="false" placeholder="输入 ls 查看文件...">
         </div>
     </div>
 </div>
@@ -160,13 +162,13 @@
     const screenGlow = document.getElementById('screenGlow');
 
     let audioCtx = null, noiseNode = null, noiseGain = null;
-    let filesReadCount = 0; // 记录玩家探索了多少文件
+    let unlockedDeep = false; // 是否解开了深层文件
 
     function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
     window.addEventListener('resize', resize);
     resize();
 
-    // 🔊 音频合成器（延续第一关的沙沙声与按键声）
+    // 🔊 恐怖低频环境音与白噪音合成
     function initAudio() {
         if (audioCtx) return;
         try {
@@ -175,13 +177,13 @@
 
             const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
             const data = buf.getChannelData(0);
-            for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+            for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.2;
 
             noiseNode = audioCtx.createBufferSource();
             noiseNode.buffer = buf; noiseNode.loop = true;
 
             noiseGain = audioCtx.createGain();
-            noiseGain.gain.value = 0.003; // 轻微内网电流声
+            noiseGain.gain.value = 0.004;
 
             noiseNode.connect(noiseGain);
             noiseGain.connect(audioCtx.destination);
@@ -193,52 +195,52 @@
         if (!audioCtx) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(140 + Math.random() * 60, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.012, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.04);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100 + Math.random() * 50, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
         osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
     }
 
-    function playRelaySound() {
+    function playHorrorSound() {
         if (!audioCtx) return;
-        for (let i = 0; i < 2; i++) {
-            setTimeout(() => {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(500 + Math.random() * 200, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.04);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.04);
-            }, i * 60);
-        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.5);
+        gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.5);
     }
 
-    // 示波器渲染（平稳内网数据流波形）
+    // 动态波形：模拟心跳与异常脉冲
     function renderSpectrum() {
-        ctx.fillStyle = "rgba(1, 5, 2, 0.22)";
+        ctx.fillStyle = "rgba(1, 4, 1, 0.25)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        ctx.strokeStyle = "rgba(0, 255, 102, 0.08)";
+        ctx.strokeStyle = "rgba(0, 255, 102, 0.07)";
         ctx.lineWidth = 1;
         for (let x = 0; x < canvas.width; x += 30) {
             ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
         }
 
         ctx.beginPath();
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = "#00ff66";
-        ctx.shadowBlur = 4;
-        ctx.shadowColor = "#00ff66";
+        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = unlockedDeep ? "#ff3333" : "#00ff66";
+        ctx.shadowBlur = unlockedDeep ? 8 : 4;
+        ctx.shadowColor = unlockedDeep ? "#ff3333" : "#00ff66";
 
         const slice = canvas.width / 90;
         let x = 0;
 
         for (let i = 0; i < 90; i++) {
-            let amp = Math.random() * 8 + 2;
+            let amp = Math.random() * 6 + 2;
+            if (unlockedDeep && i > 40 && i < 50) {
+                amp = Math.sin(i * 0.4) * 35; // 恐怖心跳突波
+            }
             let y = canvas.height / 2 + (Math.random() > 0.5 ? amp : -amp);
             if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             x += slice;
@@ -253,12 +255,11 @@
         const div = document.createElement('div');
         if (customClass) div.className = customClass;
         div.innerHTML = msg;
-        logBox.async = true;
         logBox.appendChild(div);
         logBox.scrollTop = logBox.scrollHeight;
     }
 
-    // 第二关的命令解析引擎（给予玩家充分的自由探索）
+    // 交互逻辑
     cmdInput.addEventListener('keydown', (e) => {
         initAudio();
         playKeySound();
@@ -268,66 +269,81 @@
             cmdInput.value = '';
             if (!val) return;
 
-            print(`SUB-NODE:~# ${val}`);
+            print(`SECTOR-04:~# ${val}`);
             const parts = val.split(' ');
             const cmd = parts[0].toLowerCase();
             const param = parts[1] ? parts[1].toLowerCase() : '';
 
-            // 1. 自由查看目录
+            // 1. 查看文件列表（分为浅层公开和深层加密）
             if (cmd === 'ls') {
-                playRelaySound();
-                print(`【当前目录下的存储文件】:<br>
-  - <span class="highlight-cn">project_4625.log</span> （关于第一关幽灵电台的起源报告）<br>
-  - <span class="highlight-cn">station_log_1999.txt</span> （地下科研人员留下的绝笔手记）<br>
-  - <span class="highlight-cn">security_memo.dat</span> （安全管理条例与系统重置线索）<br>
-  - <span class="highlight-cn">emergency_exit.cfg</span> （逃离系统所需的配置说明）`);
+                print(`【当前目录服务器档案】:<br>
+  [公开] <span class="highlight-cn">public_memo.txt</span> （研究所日常行政备忘录）<br>
+  [公开] <span class="highlight-cn">incident_1999.log</span> （关于 4625 信号异常的初步报告）<br>
+  [加密] <span class="danger-cn">core_containment.dat [LOCKED]</span> （核心收容体实验记录 - 需要解密）<br>
+  [加密] <span class="danger-cn">subject_zero.log [LOCKED]</span> （零号实验体意识残留 - 需要解密）`);
             }
-            // 2. 自由探索/查阅多个文件 (cat)
+            // 2. 查看文件
             else if (cmd === 'cat') {
-                playRelaySound();
-                if (param === 'project_4625.log' || param === '4625') {
-                    filesReadCount++;
-                    print(`【项目 4625 起源报告】<br>当年我们在短波段持续发射无意义的蜂鸣与代号，是为了掩盖地下实验室对某种未知深层电磁波的收容研究。后来，研究员们集体失联，电台却依然在自动循环……`);
-                } else if (param === 'station_log_1999.txt' || param === 'station_log') {
-                    filesReadCount++;
-                    print(`【绝笔手记 - 1999.08.22】<br>“设备失控了。它在通过电波反向读取我们的意识。如果后人通过外部 SDR 终端连进来了，千万不要尝试与它深度绑定。系统内部存在硬编码的安全解脱协议。”`);
-                } else if (param === 'security_memo.dat' || param === 'security_memo') {
-                    filesReadCount++;
-                    print(`【安全管理条例】<br>系统紧急重置命令格式为：<span class="highlight-cn">override [主密钥]</span>。<br>主密钥的前半部分是当年基站代号 <span class="highlight-cn">OMEGA</span>，后半部分可在逃离配置文件中找到。`);
-                } else if (param === 'emergency_exit.cfg' || param === 'emergency_exit') {
-                    filesReadCount++;
-                    print(`【紧急出口配置】<br>配置参数载入：安全网关重置密钥尾缀已确认：<span class="highlight-cn">-9982</span>。<br>（提示：你可以尝试输入 override OMEGA-9982 来执行最终系统剥离）`);
+                if (param === 'public_memo.txt' || param === 'public_memo') {
+                    print(`【行政备忘录】<br>最近值班人员精神状态很不稳定，总说听见墙壁里有电台播报声。另外，实验室紧急解密密码已临时归档在隔壁 incident_1999.log 中，密钥代号为 <span class="highlight-cn">9982</span>。`);
+                } else if (param === 'incident_1999.log' || param === 'incident_1999') {
+                    print(`【异常报告】<br>“我们在 4625 频段捕获到了非人类语法的生物电磁波。为了解密更深层的收容档案（如 core_containment.dat），请在终端输入命令：<span class="highlight-cn">decrypt 9982</span> 破开防火墙。”`);
+                } else if (param === 'core_containment.dat' || param === 'subject_zero.log') {
+                    if (!unlockedDeep) {
+                        print(`[拒绝访问] 该文件受高级沙盒加密保护！请先阅读公开文件寻找解密指令（输入 decrypt [密码]）。`, 'danger-cn');
+                    } else {
+                        if (param.includes('core')) {
+                            print(`【核心收容体记录】<br>“它不是机器，它是一团有思维的电磁迷因。任何试图通过终端与它对话的人，都会成为它肉体复苏的载体……回头吧，你身后有呼吸声。”`, 'warn-cn');
+                        } else {
+                            print(`【零号实验体意识残留】<br>“救救我……我就在终端屏幕的另一边。输入最终覆写指令：<span class="highlight-cn">override ECHO-7704</span> 彻底格式化这里，否则你也出不去了！”`, 'danger-cn');
+                        }
+                    }
                 } else {
-                    print(`[错误] 找不到该文件。请先输入 <span class="highlight-cn">ls</span> 查看可用文件列表。`, 'danger-cn');
+                    print(`[错误] 找不到该文件。输入 <span class="highlight-cn">ls</span> 查看列表。`, 'danger-cn');
                 }
             }
-            // 3. 终极覆写/解谜通关 (override)
+            // 3. 解密深层文件（不难，线索在公开文件中）
+            else if (cmd === 'decrypt') {
+                if (param === '9982') {
+                    unlockedDeep = true;
+                    playHorrorSound();
+                    statusInd.innerText = "警告：深层加密已破开";
+                    statusInd.className = "danger-cn";
+                    screenGlow.style.background = "rgba(255, 51, 51, 0.08)";
+                    print(`[防火墙突破] 解密成功！深层文件 <span class="danger-cn">core_containment.dat</span> 与 <span class="danger-cn">subject_zero.log</span> 已强制解密！`, 'success-cn');
+                    print(`[诡异现象] 终端屏幕剧烈闪烁了一下……现在你可以使用 <span class="highlight-cn">cat</span> 阅读这两份恐怖档案了。`);
+                } else {
+                    print(`[错误] 密码错误！请仔细阅读公开日志（如 public_memo.txt）寻找密码。`, 'danger-cn');
+                }
+            }
+            // 4. 终极覆写通关
             else if (cmd === 'override') {
-                if (param === 'omega-9982' || param === 'OMEGA-9982') {
-                    playRelaySound();
-                    print(`[系统内核] 收到最高覆写指令：OMEGA-9982。`, 'success-cn');
-                    print(`[底层重构] 正在格式化本地沙盒，断开与 4625 频道的量子缠绕……`, 'success-cn');
-                    print(`[通关提示] 恭喜你成功解开第二关！即将进入下一阶段（或通关结局）！`, 'success-cn');
-                    
-                    document.body.style.boxShadow = "inset 0 0 120px #00ff66";
+                if (param === 'echo-7704' || param === 'ECHO-7704') {
+                    playHorrorSound();
+                    print(`[系统内核] 收到最高覆写指令：ECHO-7704。`, 'success-cn');
+                    print(`[毁灭执行] 正在格式化本地磁道，彻底切断与地下实体的量子纠缠……`, 'success-cn');
+                    print(`[通关成功] 意识链接已断开，你成功逃离了 4625 的恐怖深渊！`, 'success-cn');
+
+                    document.body.style.boxShadow = "inset 0 0 150px #ff3333";
                     setTimeout(() => {
-                        alert("【第二关解密成功】你已彻底关闭了地下终端的意识循环，成功脱离险境！");
-                        // 可以在此跳转到第三关：window.location.href = 'stage3.html';
-                    }, 1800);
+                        alert("【第二关完美通关】你粉碎了地下科研所的意识陷阱，成功回归现实！");
+                        // 预留第三关跳转：window.location.href = 'stage3.html';
+                    }, 2000);
                 } else {
-                    print(`[拒绝执行] 密钥不匹配！请先通过 <span class="highlight-cn">ls</span> 和 <span class="highlight-cn">cat</span> 充分探索服务器内的所有档案文件以凑齐密钥。`, 'danger-cn');
+                    print(`[拒绝执行] 覆写代码不正确！请先解密深层档案（cat subject_zero.log）获取完整代码。`, 'danger-cn');
                 }
             }
-            // 常用帮助
+            // 帮助
             else if (cmd === 'help') {
-                print(`【第二关探索指南】:<br>
-  • <span class="highlight-cn">ls</span> - 探索并列出服务器中留存的所有档案文件<br>
-  • <span class="highlight-cn">cat [文件名]</span> - 自由阅读指定文件的剧情与线索（如 cat project_4625.log）<br>
-  • <span class="highlight-cn">override [密钥]</span> - 拼凑线索并输入最终覆写指令以通关（例：override OMEGA-xxxx）<br>
-  • <span class="highlight-cn">clear</span> - 清理屏幕`);
+                print(`【探索指令指南】:<br>
+  • <span class="highlight-cn">ls</span> - 扫描服务器文件（分公开与加密）<br>
+  • <span class="highlight-cn">cat [文件名]</span> - 阅读文件内容获取恐怖背景与密码<br>
+  • <span class="highlight-cn">decrypt [密码]</span> - 输入从浅层日志中找到的密码，破开深层加密文件<br>
+  • <span class="highlight-cn">override [终极代码]</span> - 在深层档案中找到终极代码后执行通关<br>
+  • <span class="highlight-cn">clear</span> - 清屏`);
             }
             else if (cmd === 'clear') { logBox.innerHTML = ''; }
-            else { print(`未识别的指令: ${cmd}。输入 <span class="highlight-cn">help</span> 查看探索指南。`, 'danger-cn'); }
+            else { print(`未识别的指令: ${cmd}。输入 <span class="highlight-cn">help</span> 获取帮助。`, 'danger-cn'); }
         }
     });
 
